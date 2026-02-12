@@ -26,7 +26,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> setupMasterPassword(String masterPassword) async {
     final salt = _encryptionService.generateSecureRandomBytes(AppConstants.saltLength);
-    final derivedKey = _encryptionService.deriveKey(masterPassword, salt);
+    final derivedKey = await _encryptionService.deriveKey(masterPassword, salt);
     final verifyHash = _encryptionService.getVerificationHash(derivedKey);
     final dbKey = _encryptionService.getDatabaseKey(derivedKey);
 
@@ -45,7 +45,7 @@ class AuthRepositoryImpl implements AuthRepository {
     if (saltBase64 == null || storedHash == null) return null;
 
     final salt = base64Decode(saltBase64);
-    final derivedKey = _encryptionService.deriveKey(masterPassword, salt);
+    final derivedKey = await _encryptionService.deriveKey(masterPassword, salt);
     final computedHash = _encryptionService.getVerificationHash(derivedKey);
 
     if (computedHash == storedHash) {
@@ -64,7 +64,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // Generate new salt and key
     final newSalt = _encryptionService.generateSecureRandomBytes(AppConstants.saltLength);
-    final newKey = _encryptionService.deriveKey(newPassword, newSalt);
+    final newKey = await _encryptionService.deriveKey(newPassword, newSalt);
     final newVerifyHash = _encryptionService.getVerificationHash(newKey);
     final newDbKey = _encryptionService.getDatabaseKey(newKey);
 

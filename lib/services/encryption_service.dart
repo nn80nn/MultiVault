@@ -1,22 +1,50 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
+import 'package:flutter/foundation.dart';
 import 'package:pointycastle/export.dart';
 
 import '../core/constants/app_constants.dart';
 
+// Top-level function for isolate computation
+class _DeriveKeyParams {
+  final String masterPassword;
+  final Uint8List salt;
+  final int iterations;
+  final int keyLength;
+
+  _DeriveKeyParams({
+    required this.masterPassword,
+    required this.salt,
+    required this.iterations,
+    required this.keyLength,
+  });
+}
+
+Uint8List _deriveKeyInIsolate(_DeriveKeyParams params) {
+  final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
+    ..init(Pbkdf2Parameters(
+      params.salt,
+      params.iterations,
+      params.keyLength,
+    ));
+  return derivator.process(Uint8List.fromList(utf8.encode(params.masterPassword)));
+}
+
 class EncryptionService {
   /// Derives a 256-bit key from master password using PBKDF2-HMAC-SHA256
-  Uint8List deriveKey(String masterPassword, Uint8List salt) {
-    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(
-        salt,
-        AppConstants.pbkdf2Iterations,
-        AppConstants.keyLength,
-      ));
-    return derivator.process(Uint8List.fromList(utf8.encode(masterPassword)));
+  /// Runs in a separate isolate to avoid blocking the UI thread
+  Future<Uint8List> deriveKey(String masterPassword, Uint8List salt) async {
+    return compute(
+      _deriveKeyInIsolate,
+      _DeriveKeyParams(
+        masterPassword: masterPassword,
+        salt: salt,
+        iterations: AppConstants.pbkdf2Iterations,
+        keyLength: AppConstants.keyLength,
+      ),
+    );
   }
 
   /// Generates cryptographically secure random bytes

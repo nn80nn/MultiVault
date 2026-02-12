@@ -66,14 +66,15 @@ class AppDatabase extends _$AppDatabase {
   }
 
   static Future<AppDatabase> openEncrypted(String encryptionKey) async {
-    open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
-
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, DbConstants.dbFileName));
 
     return AppDatabase(
       NativeDatabase.createInBackground(
         file,
+        isolateSetup: () async {
+          open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+        },
         setup: (db) {
           db.execute("PRAGMA key = '$encryptionKey'");
           db.execute('PRAGMA journal_mode = WAL');
