@@ -20,9 +20,9 @@ import '../../features/vault/domain/repositories/category_repository.dart';
 import '../../features/vault/domain/repositories/vault_repository.dart';
 import '../../services/biometric_service.dart';
 import '../../services/clipboard_service.dart';
-import '../../services/device_security_service.dart';
+// import '../../services/device_security_service.dart'; // TEMPORARILY DISABLED
 import '../../services/encryption_service.dart';
-import '../../services/screen_security_service.dart';
+// import '../../services/screen_security_service.dart'; // TEMPORARILY DISABLED
 
 // Lock state
 enum LockStatus { locked, unlocked, setupRequired }
@@ -45,13 +45,14 @@ final clipboardServiceProvider = Provider<ClipboardService>((ref) {
   return ClipboardService();
 });
 
-final screenSecurityServiceProvider = Provider<ScreenSecurityService>((ref) {
-  return ScreenSecurityService();
-});
+// TEMPORARILY DISABLED - plugin AGP compatibility issues
+// final screenSecurityServiceProvider = Provider<ScreenSecurityService>((ref) {
+//   return ScreenSecurityService();
+// });
 
-final deviceSecurityServiceProvider = Provider<DeviceSecurityService>((ref) {
-  return DeviceSecurityService();
-});
+// final deviceSecurityServiceProvider = Provider<DeviceSecurityService>((ref) {
+//   return DeviceSecurityService();
+// });
 
 final secureStorageDatasourceProvider =
     Provider<SecureStorageDatasource>((ref) {

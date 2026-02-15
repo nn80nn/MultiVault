@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../services/device_security_service.dart';
+// import '../../../../services/device_security_service.dart'; // TEMPORARILY DISABLED
 import '../widgets/biometric_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -27,11 +27,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     _checkBiometricAvailability();
-    _checkDeviceSecurity();
+    // _checkDeviceSecurity(); // TEMPORARILY DISABLED - plugin compatibility issue
   }
 
   /// Checks if device is compromised and shows warning
   /// SECURITY: Does not block access - only warns user
+  /// TEMPORARILY DISABLED due to flutter_jailbreak_detection plugin AGP compatibility issue
+  /*
   Future<void> _checkDeviceSecurity() async {
     try {
       final deviceSecurityService = ref.read(deviceSecurityServiceProvider);
@@ -49,6 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // Silently fail - don't block user access if check fails
     }
   }
+  */
 
   @override
   void dispose() {
@@ -241,6 +244,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   /// Shows warning dialog for compromised devices
   /// SECURITY: Only warns - does not block access for usability
+  /// TEMPORARILY DISABLED due to flutter_jailbreak_detection plugin AGP compatibility issue
+  /*
   void _showSecurityWarning(
     DeviceSecurityStatus status,
     DeviceSecurityService service,
@@ -289,6 +294,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
+  */
 
   @override
   Widget build(BuildContext context) {

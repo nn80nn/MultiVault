@@ -30,9 +30,9 @@ dependencies:
   # Biometrics
   local_auth: ^2.3.0
 
-  # Security
-  flutter_windowmanager: ^0.2.0  # Screenshot protection
-  flutter_jailbreak_detection: ^1.10.0  # Root/jailbreak detection
+  # Security - BOTH TEMPORARILY DISABLED due to AGP 8+ compatibility issues
+  # flutter_windowmanager: ^0.2.0  # Screenshot protection - DISABLED for emulator demo
+  # flutter_jailbreak_detection: ^1.10.0  # Root/jailbreak detection - DISABLED for emulator demo
 
   # Navigation
   go_router: ^14.8.1

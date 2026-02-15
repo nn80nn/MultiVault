@@ -24,16 +24,16 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen> {
   @override
   void initState() {
     super.initState();
-    // Enable screenshot protection for password list
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(screenSecurityServiceProvider).enableScreenSecurity();
-    });
+    // TEMPORARILY DISABLED: Screenshot protection (plugin AGP compatibility issue)
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   ref.read(screenSecurityServiceProvider).enableScreenSecurity();
+    // });
   }
 
   @override
   void dispose() {
-    // Disable screenshot protection when leaving
-    ref.read(screenSecurityServiceProvider).disableScreenSecurity();
+    // TEMPORARILY DISABLED: Screenshot protection (plugin AGP compatibility issue)
+    // ref.read(screenSecurityServiceProvider).disableScreenSecurity();
     _searchController.dispose();
     super.dispose();
   }
