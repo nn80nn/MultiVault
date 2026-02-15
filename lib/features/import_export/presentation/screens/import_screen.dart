@@ -296,11 +296,37 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     setState(() => _isImporting = true);
 
     try {
+      // Validate file size (max 50 MB)
+      const maxFileSize = 50 * 1024 * 1024; // 50 MB
+      if (_selectedFile!.size > maxFileSize) {
+        if (mounted) {
+          context.showSnackBar(
+            'File too large. Maximum size is 50 MB',
+            isError: true,
+          );
+        }
+        return;
+      }
+
       // Read file content
       final filePath = _selectedFile!.path;
       if (filePath == null) {
         throw Exception('File path not available');
       }
+
+      // Validate file extension
+      final extension = filePath.split('.').last.toLowerCase();
+      final allowedExtensions = _getAllowedExtensions(_selectedFormat);
+      if (!allowedExtensions.contains(extension)) {
+        if (mounted) {
+          context.showSnackBar(
+            'Invalid file extension. Expected: ${allowedExtensions.join(", ")}',
+            isError: true,
+          );
+        }
+        return;
+      }
+
       final content = await File(filePath).readAsString();
 
       // Parse based on selected format
@@ -349,8 +375,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         );
       }
     } catch (e) {
+      // Don't expose sensitive error details
       if (mounted) {
-        context.showSnackBar('Import failed: $e', isError: true);
+        context.showSnackBar('Import failed. Please try again.', isError: true);
       }
     } finally {
       if (mounted) {

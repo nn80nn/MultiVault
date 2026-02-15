@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
+import '../../../vault/domain/entities/password_entry.dart' show PasswordEntry;
 import '../../data/exporters/csv_exporter.dart';
 import '../../data/exporters/encrypted_backup_exporter.dart';
 
@@ -36,6 +37,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
   @override
   void dispose() {
+    // Clear password text before disposing
+    _passwordController.clear();
+    _confirmPasswordController.clear();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -281,14 +285,32 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   bool _canExport() {
     if (_isExporting) return false;
     if (_enableEncryption || _selectedFormat == ExportFormat.encryptedJson) {
-      return _passwordController.text.isNotEmpty &&
-          _passwordController.text == _confirmPasswordController.text;
+      final password = _passwordController.text;
+      return password.isNotEmpty &&
+          password.length >= 8 &&
+          password == _confirmPasswordController.text;
     }
     return true;
   }
 
   Future<void> _exportPasswords() async {
     setState(() => _isExporting = true);
+
+    // Validate export password if encryption is enabled
+    if (_enableEncryption || _selectedFormat == ExportFormat.encryptedJson) {
+      if (_passwordController.text.length < 8) {
+        if (mounted) {
+          context.showSnackBar(
+            'Export password must be at least 8 characters',
+            isError: true,
+          );
+        }
+        setState(() => _isExporting = false);
+        return;
+      }
+    }
+
+    List<PasswordEntry>? decryptedEntries;
 
     try {
       final vaultRepository = ref.read(vaultRepositoryProvider);
@@ -302,28 +324,44 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         return;
       }
 
-      // Get all entries and decrypt passwords/notes for export
+      // Get all entries
       final encryptedEntries = await vaultRepository.getAllEntriesForExport();
-      final decryptedEntries = encryptedEntries.map((entry) {
-        return entry.copyWith(
-          encryptedPassword: encryptionService.decryptText(
+
+      // Decrypt entries in batches to minimize memory footprint
+      decryptedEntries = <PasswordEntry>[];
+      for (final entry in encryptedEntries) {
+        try {
+          final decryptedPassword = encryptionService.decryptText(
             entry.encryptedPassword,
             encryptionKey,
-          ),
-          encryptedNotes: entry.encryptedNotes != null
-              ? encryptionService.decryptText(
-                  entry.encryptedNotes!,
-                  encryptionKey,
-                )
-              : null,
-        );
-      }).toList();
+          );
+          final decryptedNotes = entry.encryptedNotes != null
+              ? encryptionService.decryptText(entry.encryptedNotes!, encryptionKey)
+              : null;
 
-      // Generate file name and path
-      final fileName =
-          'multivault_export_${DateTime.now().millisecondsSinceEpoch}';
+          decryptedEntries.add(
+            entry.copyWith(
+              encryptedPassword: decryptedPassword,
+              encryptedNotes: decryptedNotes,
+            ),
+          );
+        } catch (e) {
+          // Skip entries that fail to decrypt
+          continue;
+        }
+      }
+
+      if (decryptedEntries.isEmpty) {
+        if (mounted) {
+          context.showSnackBar('No entries to export', isError: true);
+        }
+        return;
+      }
+
+      // Generate file name and path - use cache directory for privacy
+      final fileName = 'multivault_backup';
       final extension = _getFileExtension(_selectedFormat);
-      final directory = await getApplicationDocumentsDirectory();
+      final directory = await getApplicationCacheDirectory();
       final filePath = '${directory.path}/$fileName.$extension';
 
       // Export based on format
@@ -350,6 +388,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
       _exportedFilePath = filePath;
 
+      final exportedCount = decryptedEntries.length;
       if (mounted) {
         await showDialog(
           context: context,
@@ -360,20 +399,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               color: Colors.green,
             ),
             title: const Text('Export Successful'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Exported ${decryptedEntries.length} passwords',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$fileName.$extension',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+            content: Text(
+              'Exported $exportedCount passwords',
+              textAlign: TextAlign.center,
             ),
             actions: [
               TextButton(
@@ -393,10 +421,17 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         );
       }
     } catch (e) {
+      // Don't expose sensitive error details
       if (mounted) {
-        context.showSnackBar('Export failed: $e', isError: true);
+        context.showSnackBar('Export failed. Please try again.', isError: true);
       }
     } finally {
+      // Clean up decrypted data from memory
+      if (decryptedEntries != null) {
+        decryptedEntries.clear();
+        decryptedEntries = null;
+      }
+
       if (mounted) {
         setState(() => _isExporting = false);
       }

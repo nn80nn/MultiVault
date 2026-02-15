@@ -1,3 +1,4 @@
+import 'dart:convert' show utf8;
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart';
@@ -210,27 +211,62 @@ class VaultRepositoryImpl implements VaultRepository {
 
   @override
   Future<void> reEncryptAllEntries(Uint8List oldKey, Uint8List newKey) async {
-    final allEntries = await _entryDao.getAll(includeDeleted: true);
-    for (final entry in allEntries) {
-      final decryptedPassword =
-          _encryptionService.decryptText(entry.encryptedPassword, oldKey);
-      final newEncPassword =
-          _encryptionService.encryptText(decryptedPassword, newKey);
+    // Use transaction to ensure atomicity - either all entries are re-encrypted or none
+    await _entryDao.db.transaction(() async {
+      final allEntries = await _entryDao.getAll(includeDeleted: true);
 
-      String? newEncNotes;
-      if (entry.encryptedNotes != null) {
-        final decryptedNotes =
-            _encryptionService.decryptText(entry.encryptedNotes!, oldKey);
-        newEncNotes = _encryptionService.encryptText(decryptedNotes, newKey);
+      for (final entry in allEntries) {
+        String decryptedPassword = '';
+        String? decryptedNotes;
+
+        try {
+          // Decrypt with old key
+          decryptedPassword = _encryptionService.decryptText(
+            entry.encryptedPassword,
+            oldKey,
+          );
+
+          if (entry.encryptedNotes != null) {
+            decryptedNotes = _encryptionService.decryptText(
+              entry.encryptedNotes!,
+              oldKey,
+            );
+          }
+
+          // Encrypt with new key
+          final newEncPassword = _encryptionService.encryptText(
+            decryptedPassword,
+            newKey,
+          );
+
+          String? newEncNotes;
+          if (decryptedNotes != null) {
+            newEncNotes = _encryptionService.encryptText(decryptedNotes, newKey);
+          }
+
+          // Update entry
+          await _entryDao.updateEntry(
+            PasswordEntriesCompanion(
+              id: Value(entry.id),
+              encryptedPassword: Value(newEncPassword),
+              encryptedNotes: Value(newEncNotes),
+            ),
+          );
+
+        } finally {
+          // Zero out decrypted data from memory
+          if (decryptedPassword.isNotEmpty) {
+            _encryptionService.zeroMemory(
+              Uint8List.fromList(utf8.encode(decryptedPassword)),
+            );
+          }
+          if (decryptedNotes != null) {
+            _encryptionService.zeroMemory(
+              Uint8List.fromList(utf8.encode(decryptedNotes)),
+            );
+          }
+        }
       }
-
-      await _entryDao.updateEntry(
-        PasswordEntriesCompanion(
-          id: Value(entry.id),
-          encryptedPassword: Value(newEncPassword),
-          encryptedNotes: Value(newEncNotes),
-        ),
-      );
-    }
+    });
   }
 }

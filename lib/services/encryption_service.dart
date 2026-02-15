@@ -41,6 +41,13 @@ class EncryptionService {
   /// Derives a 256-bit key from master password using PBKDF2-HMAC-SHA256
   /// Runs in a separate isolate to avoid blocking the UI thread
   Future<Uint8List> deriveKey(String masterPassword, Uint8List salt) async {
+    if (masterPassword.isEmpty) {
+      throw ArgumentError('Master password cannot be empty');
+    }
+    if (salt.length != AppConstants.saltLength) {
+      throw ArgumentError('Invalid salt length: expected ${AppConstants.saltLength} bytes');
+    }
+
     return compute(
       _deriveKeyInIsolate,
       _DeriveKeyParams(
@@ -54,10 +61,15 @@ class EncryptionService {
 
   /// Generates cryptographically secure random bytes
   Uint8List generateSecureRandomBytes(int length) {
+    if (length <= 0 || length > 1024) {
+      throw ArgumentError('Invalid length: must be between 1 and 1024 bytes');
+    }
     final random = Random.secure();
-    return Uint8List.fromList(
-      List<int>.generate(length, (_) => random.nextInt(256)),
-    );
+    final bytes = Uint8List(length);
+    for (int i = 0; i < length; i++) {
+      bytes[i] = random.nextInt(256);
+    }
+    return bytes;
   }
 
   /// Extracts verification hash (first 16 bytes of derived key) as base64
@@ -72,31 +84,54 @@ class EncryptionService {
 
   /// AES-256-CBC encryption. Returns base64 string with IV prepended.
   String encryptText(String plaintext, Uint8List key) {
-    final iv = encrypt_lib.IV.fromSecureRandom(AppConstants.ivLength);
-    final encrypter = encrypt_lib.Encrypter(
-      encrypt_lib.AES(encrypt_lib.Key(key), mode: encrypt_lib.AESMode.cbc),
-    );
-    final encrypted = encrypter.encrypt(plaintext, iv: iv);
+    if (plaintext.isEmpty) {
+      throw ArgumentError('Plaintext cannot be empty');
+    }
+    if (key.length != AppConstants.keyLength) {
+      throw ArgumentError('Invalid key length: expected ${AppConstants.keyLength} bytes');
+    }
 
-    final combined = Uint8List(AppConstants.ivLength + encrypted.bytes.length);
-    combined.setRange(0, AppConstants.ivLength, iv.bytes);
-    combined.setRange(AppConstants.ivLength, combined.length, encrypted.bytes);
-    return base64Encode(combined);
+    try {
+      final iv = encrypt_lib.IV.fromSecureRandom(AppConstants.ivLength);
+      final encrypter = encrypt_lib.Encrypter(
+        encrypt_lib.AES(encrypt_lib.Key(key), mode: encrypt_lib.AESMode.cbc),
+      );
+      final encrypted = encrypter.encrypt(plaintext, iv: iv);
+
+      final combined = Uint8List(AppConstants.ivLength + encrypted.bytes.length);
+      combined.setRange(0, AppConstants.ivLength, iv.bytes);
+      combined.setRange(AppConstants.ivLength, combined.length, encrypted.bytes);
+      return base64Encode(combined);
+    } catch (e) {
+      throw Exception('Encryption failed');
+    }
   }
 
   /// AES-256-CBC decryption. Expects base64 string with IV prepended.
   String decryptText(String encryptedBase64, Uint8List key) {
-    final combined = base64Decode(encryptedBase64);
-    final iv = encrypt_lib.IV(
-      Uint8List.fromList(combined.sublist(0, AppConstants.ivLength)),
-    );
-    final ciphertext = encrypt_lib.Encrypted(
-      Uint8List.fromList(combined.sublist(AppConstants.ivLength)),
-    );
-    final encrypter = encrypt_lib.Encrypter(
-      encrypt_lib.AES(encrypt_lib.Key(key), mode: encrypt_lib.AESMode.cbc),
-    );
-    return encrypter.decrypt(ciphertext, iv: iv);
+    try {
+      final combined = base64Decode(encryptedBase64);
+
+      // Validate minimum length (IV + at least one block)
+      if (combined.length < AppConstants.ivLength + 16) {
+        throw FormatException('Invalid encrypted data: too short');
+      }
+
+      final iv = encrypt_lib.IV(
+        Uint8List.fromList(combined.sublist(0, AppConstants.ivLength)),
+      );
+      final ciphertext = encrypt_lib.Encrypted(
+        Uint8List.fromList(combined.sublist(AppConstants.ivLength)),
+      );
+      final encrypter = encrypt_lib.Encrypter(
+        encrypt_lib.AES(encrypt_lib.Key(key), mode: encrypt_lib.AESMode.cbc),
+      );
+      return encrypter.decrypt(ciphertext, iv: iv);
+    } on FormatException {
+      throw FormatException('Failed to decrypt: invalid format');
+    } catch (e) {
+      throw Exception('Decryption failed');
+    }
   }
 
   /// Securely zeros memory buffer

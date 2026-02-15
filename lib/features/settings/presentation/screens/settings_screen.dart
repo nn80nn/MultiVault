@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -330,30 +331,39 @@ class SettingsScreen extends ConsumerWidget {
     newController.dispose();
     confirmController.dispose();
 
-    // Validate
-    if (newPassword != confirmPassword) {
-      if (context.mounted) {
-        context.showSnackBar('Passwords do not match', isError: true);
-      }
-      return;
-    }
-    if (newPassword.length < AppConstants.minMasterPasswordLength) {
-      if (context.mounted) {
-        context.showSnackBar(
-          'Password must be at least ${AppConstants.minMasterPasswordLength} characters',
-          isError: true,
-        );
-      }
-      return;
-    }
-    if (currentPassword == newPassword) {
-      if (context.mounted) {
-        context.showSnackBar('New password must be different', isError: true);
-      }
-      return;
-    }
+    // Convert passwords to bytes for secure cleanup
+    Uint8List? currentPasswordBytes;
+    Uint8List? newPasswordBytes;
+    Uint8List? confirmPasswordBytes;
 
     try {
+      currentPasswordBytes = Uint8List.fromList(utf8.encode(currentPassword));
+      newPasswordBytes = Uint8List.fromList(utf8.encode(newPassword));
+      confirmPasswordBytes = Uint8List.fromList(utf8.encode(confirmPassword));
+
+      // Validate
+      if (newPassword != confirmPassword) {
+        if (context.mounted) {
+          context.showSnackBar('Passwords do not match', isError: true);
+        }
+        return;
+      }
+      if (newPassword.length < AppConstants.minMasterPasswordLength) {
+        if (context.mounted) {
+          context.showSnackBar(
+            'Password must be at least ${AppConstants.minMasterPasswordLength} characters',
+            isError: true,
+          );
+        }
+        return;
+      }
+      if (currentPassword == newPassword) {
+        if (context.mounted) {
+          context.showSnackBar('New password must be different', isError: true);
+        }
+        return;
+      }
+
       final authRepository = ref.read(authRepositoryProvider);
       final encryptionService = ref.read(encryptionServiceProvider);
       final vaultRepository = ref.read(vaultRepositoryProvider);
@@ -392,18 +402,34 @@ class SettingsScreen extends ConsumerWidget {
       // 6. Update in-memory encryption key
       ref.read(encryptionKeyProvider.notifier).state = newKey;
 
-      // 7. Clean up
+      // 7. Clean up old key
       encryptionService.zeroMemory(oldKey);
 
       if (context.mounted) {
         context.showSnackBar('Master password changed successfully');
       }
     } catch (e) {
+      // Don't expose sensitive error details
+      String errorMsg = 'Failed to change password';
+      if (e.toString().contains('incorrect')) {
+        errorMsg = 'Current password is incorrect';
+      } else if (e.toString().contains('transaction')) {
+        errorMsg = 'Database error occurred. Please try again';
+      }
       if (context.mounted) {
-        context.showSnackBar(
-          'Failed to change password: ${e.toString()}',
-          isError: true,
-        );
+        context.showSnackBar(errorMsg, isError: true);
+      }
+    } finally {
+      // Zero out password bytes from memory
+      final encryptionService = ref.read(encryptionServiceProvider);
+      if (currentPasswordBytes != null) {
+        encryptionService.zeroMemory(currentPasswordBytes);
+      }
+      if (newPasswordBytes != null) {
+        encryptionService.zeroMemory(newPasswordBytes);
+      }
+      if (confirmPasswordBytes != null) {
+        encryptionService.zeroMemory(confirmPasswordBytes);
       }
     }
   }
