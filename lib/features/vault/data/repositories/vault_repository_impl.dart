@@ -207,4 +207,30 @@ class VaultRepositoryImpl implements VaultRepository {
   Future<Map<String, int>> getEntryCounts() {
     return _entryDao.getEntryCounts();
   }
+
+  @override
+  Future<void> reEncryptAllEntries(Uint8List oldKey, Uint8List newKey) async {
+    final allEntries = await _entryDao.getAll(includeDeleted: true);
+    for (final entry in allEntries) {
+      final decryptedPassword =
+          _encryptionService.decryptText(entry.encryptedPassword, oldKey);
+      final newEncPassword =
+          _encryptionService.encryptText(decryptedPassword, newKey);
+
+      String? newEncNotes;
+      if (entry.encryptedNotes != null) {
+        final decryptedNotes =
+            _encryptionService.decryptText(entry.encryptedNotes!, oldKey);
+        newEncNotes = _encryptionService.encryptText(decryptedNotes, newKey);
+      }
+
+      await _entryDao.updateEntry(
+        PasswordEntriesCompanion(
+          id: Value(entry.id),
+          encryptedPassword: Value(newEncPassword),
+          encryptedNotes: Value(newEncNotes),
+        ),
+      );
+    }
+  }
 }

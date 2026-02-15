@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../entities/password_entry.dart' as entity;
 
 abstract class VaultRepository {
@@ -15,4 +17,5 @@ abstract class VaultRepository {
     bool includeDeleted = false,
   });
   Future<Map<String, int>> getEntryCounts();
+  Future<void> reEncryptAllEntries(Uint8List oldKey, Uint8List newKey);
 }

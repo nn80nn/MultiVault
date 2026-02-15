@@ -1,6 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
+import '../../data/exporters/csv_exporter.dart';
+import '../../data/exporters/encrypted_backup_exporter.dart';
 
 enum ExportFormat {
   encryptedJson,
@@ -24,6 +32,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   bool _isExporting = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String? _exportedFilePath;
 
   @override
   void dispose() {
@@ -282,23 +291,80 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     setState(() => _isExporting = true);
 
     try {
-      // Simulate export process
-      await Future.delayed(const Duration(seconds: 2));
+      final vaultRepository = ref.read(vaultRepositoryProvider);
+      final encryptionService = ref.read(encryptionServiceProvider);
+      final encryptionKey = ref.read(encryptionKeyProvider);
+
+      if (encryptionKey == null) {
+        if (mounted) {
+          context.showSnackBar('Vault is locked', isError: true);
+        }
+        return;
+      }
+
+      // Get all entries and decrypt passwords/notes for export
+      final encryptedEntries = await vaultRepository.getAllEntriesForExport();
+      final decryptedEntries = encryptedEntries.map((entry) {
+        return entry.copyWith(
+          encryptedPassword: encryptionService.decryptText(
+            entry.encryptedPassword,
+            encryptionKey,
+          ),
+          encryptedNotes: entry.encryptedNotes != null
+              ? encryptionService.decryptText(
+                  entry.encryptedNotes!,
+                  encryptionKey,
+                )
+              : null,
+        );
+      }).toList();
+
+      // Generate file name and path
+      final fileName =
+          'multivault_export_${DateTime.now().millisecondsSinceEpoch}';
+      final extension = _getFileExtension(_selectedFormat);
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/$fileName.$extension';
+
+      // Export based on format
+      switch (_selectedFormat) {
+        case ExportFormat.encryptedJson:
+          final bytes = EncryptedBackupExporter().export(
+            decryptedEntries,
+            password: _passwordController.text,
+          );
+          await File(filePath).writeAsBytes(bytes);
+          break;
+        case ExportFormat.csv:
+          final csvContent = CsvExporter().export(decryptedEntries);
+          await File(filePath).writeAsString(csvContent);
+          break;
+        case ExportFormat.json:
+          final bytes = EncryptedBackupExporter().export(
+            decryptedEntries,
+            password: _enableEncryption ? _passwordController.text : null,
+          );
+          await File(filePath).writeAsBytes(bytes);
+          break;
+      }
+
+      _exportedFilePath = filePath;
 
       if (mounted) {
-        final fileName = 'multivault_export_${DateTime.now().millisecondsSinceEpoch}';
-        final extension = _getFileExtension(_selectedFormat);
-
         await showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            icon: const Icon(Icons.check_circle, size: 64, color: Colors.green),
+          builder: (dialogContext) => AlertDialog(
+            icon: const Icon(
+              Icons.check_circle,
+              size: 64,
+              color: Colors.green,
+            ),
             title: const Text('Export Successful'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Your passwords have been exported to:',
+                  'Exported ${decryptedEntries.length} passwords',
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
@@ -307,22 +373,16 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'The file has been saved to your Downloads folder.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
               ],
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('Close'),
               ),
               FilledButton.icon(
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                   _shareExportFile();
                 },
                 icon: const Icon(Icons.share),
@@ -344,8 +404,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   }
 
   Future<void> _shareExportFile() async {
-    // In a real implementation, this would use share_plus package
-    context.showSnackBar('Share functionality not implemented in this demo');
+    if (_exportedFilePath == null) return;
+    try {
+      await Share.shareXFiles([XFile(_exportedFilePath!)]);
+    } catch (e) {
+      if (mounted) {
+        context.showSnackBar('Share failed: $e', isError: true);
+      }
+    }
   }
 
   String _getFormatName(ExportFormat format) {

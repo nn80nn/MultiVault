@@ -1,7 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+
+import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
+import '../../data/parsers/chrome_csv_parser.dart';
+import '../../data/parsers/firefox_csv_parser.dart';
+import '../../data/parsers/generic_json_parser.dart';
+import '../../data/parsers/keepass_xml_parser.dart';
+import '../../data/parsers/lastpass_csv_parser.dart';
 
 enum ImportFormat {
   chromeCSV,
@@ -287,27 +296,50 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     setState(() => _isImporting = true);
 
     try {
-      // Simulate import process
-      await Future.delayed(const Duration(seconds: 2));
+      // Read file content
+      final filePath = _selectedFile!.path;
+      if (filePath == null) {
+        throw Exception('File path not available');
+      }
+      final content = await File(filePath).readAsString();
+
+      // Parse based on selected format
+      final entries = switch (_selectedFormat) {
+        ImportFormat.chromeCSV => ChromeCsvParser().parse(content),
+        ImportFormat.firefoxCSV => FirefoxCsvParser().parse(content),
+        ImportFormat.lastPassCSV => LastpassCsvParser().parse(content),
+        ImportFormat.keepassXML => KeepassXmlParser().parse(content),
+        ImportFormat.json => GenericJsonParser().parse(content),
+      };
+
+      if (entries.isEmpty) {
+        if (mounted) {
+          context.showSnackBar(
+            'No passwords found in file',
+            isError: true,
+          );
+        }
+        return;
+      }
+
+      // Import entries into vault
+      final vaultRepository = ref.read(vaultRepositoryProvider);
+      final imported = await vaultRepository.importEntries(entries);
 
       if (mounted) {
-        final imported = 42; // Mock count
-        final skipped = 3; // Mock count
-
         await showDialog(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (dialogContext) => AlertDialog(
             icon: const Icon(Icons.check_circle, size: 64, color: Colors.green),
             title: const Text('Import Successful'),
             content: Text(
-              'Imported $imported passwords\n'
-              'Skipped $skipped duplicates',
+              'Imported $imported passwords',
               textAlign: TextAlign.center,
             ),
             actions: [
               FilledButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                   Navigator.of(context).pop();
                 },
                 child: const Text('Done'),

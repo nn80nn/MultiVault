@@ -37,17 +37,61 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _checkBiometricAvailability() async {
     try {
       final biometricService = ref.read(biometricServiceProvider);
+      final authRepository = ref.read(authRepositoryProvider);
+      final settingsRepository = ref.read(settingsRepositoryProvider);
+
+      // Check 1: Hardware support
       final isAvailable = await biometricService.isBiometricAvailable();
       final biometrics = await biometricService.getAvailableBiometrics();
 
+      if (!isAvailable || biometrics.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isBiometricAvailable = false;
+            _availableBiometrics = [];
+          });
+        }
+        return;
+      }
+
+      // Check 2: Biometrics enabled in app settings
+      final settings = await settingsRepository.getSettings();
+      if (!settings.biometricsEnabled) {
+        if (mounted) {
+          setState(() {
+            _isBiometricAvailable = false;
+            _availableBiometrics = biometrics;
+          });
+        }
+        return;
+      }
+
+      // Check 3: Biometric key exists in secure storage
+      final storedKey = await authRepository.getBiometricKey();
+      if (storedKey == null) {
+        if (mounted) {
+          setState(() {
+            _isBiometricAvailable = false;
+            _availableBiometrics = biometrics;
+          });
+        }
+        return;
+      }
+
+      // All checks pass
       if (mounted) {
         setState(() {
-          _isBiometricAvailable = isAvailable && biometrics.isNotEmpty;
+          _isBiometricAvailable = true;
           _availableBiometrics = biometrics;
         });
       }
     } catch (e) {
-      // Biometrics not available
+      if (mounted) {
+        setState(() {
+          _isBiometricAvailable = false;
+          _availableBiometrics = [];
+        });
+      }
     }
   }
 

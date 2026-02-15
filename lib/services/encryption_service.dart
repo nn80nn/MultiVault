@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
 import 'package:flutter/foundation.dart';
-import 'package:pointycastle/export.dart';
 
 import '../core/constants/app_constants.dart';
 
-// Top-level function for isolate computation
 class _DeriveKeyParams {
   final String masterPassword;
   final Uint8List salt;
@@ -22,14 +21,20 @@ class _DeriveKeyParams {
   });
 }
 
-Uint8List _deriveKeyInIsolate(_DeriveKeyParams params) {
-  final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-    ..init(Pbkdf2Parameters(
-      params.salt,
-      params.iterations,
-      params.keyLength,
-    ));
-  return derivator.process(Uint8List.fromList(utf8.encode(params.masterPassword)));
+Future<Uint8List> _deriveKeyInIsolate(_DeriveKeyParams params) async {
+  final pbkdf2 = Pbkdf2(
+    macAlgorithm: Hmac.sha256(),
+    iterations: params.iterations,
+    bits: params.keyLength * 8,
+  );
+
+  final secretKey = await pbkdf2.deriveKey(
+    secretKey: SecretKey(utf8.encode(params.masterPassword)),
+    nonce: params.salt,
+  );
+
+  final keyBytes = await secretKey.extractBytes();
+  return Uint8List.fromList(keyBytes);
 }
 
 class EncryptionService {

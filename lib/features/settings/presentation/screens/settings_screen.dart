@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
 
@@ -37,17 +41,8 @@ class SettingsScreen extends ConsumerWidget {
                     title: const Text('Biometric Authentication'),
                     subtitle: const Text('Use fingerprint or face recognition'),
                     value: settings.biometricsEnabled,
-                    onChanged: (value) async {
-                      final updatedSettings = settings.copyWith(biometricsEnabled: value);
-                      await ref
-                          .read(settingsRepositoryProvider)
-                          .saveSettings(updatedSettings);
-                      if (context.mounted) {
-                        context.showSnackBar(
-                          value ? 'Biometrics enabled' : 'Biometrics disabled',
-                        );
-                      }
-                    },
+                    onChanged: (value) =>
+                        _handleBiometricToggle(context, ref, value, settings),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -212,6 +207,61 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _handleBiometricToggle(
+    BuildContext context,
+    WidgetRef ref,
+    bool enable,
+    dynamic settings,
+  ) async {
+    final biometricService = ref.read(biometricServiceProvider);
+    final authRepository = ref.read(authRepositoryProvider);
+
+    if (enable) {
+      final isAvailable = await biometricService.isBiometricAvailable();
+      if (!isAvailable) {
+        if (context.mounted) {
+          context.showSnackBar(
+            'Biometric authentication is not available on this device',
+            isError: true,
+          );
+        }
+        return;
+      }
+
+      final authenticated = await biometricService.authenticate(
+        reason: 'Verify your identity to enable biometric unlock',
+      );
+      if (!authenticated) {
+        if (context.mounted) {
+          context.showSnackBar('Biometric verification failed', isError: true);
+        }
+        return;
+      }
+
+      final encryptionKey = ref.read(encryptionKeyProvider);
+      if (encryptionKey == null) {
+        if (context.mounted) {
+          context.showSnackBar('Vault is locked. Please unlock first.', isError: true);
+        }
+        return;
+      }
+
+      await authRepository.enableBiometricKey(encryptionKey);
+      final updatedSettings = settings.copyWith(biometricsEnabled: true);
+      await ref.read(settingsRepositoryProvider).saveSettings(updatedSettings);
+      if (context.mounted) {
+        context.showSnackBar('Biometrics enabled');
+      }
+    } else {
+      await authRepository.disableBiometricKey();
+      final updatedSettings = settings.copyWith(biometricsEnabled: false);
+      await ref.read(settingsRepositoryProvider).saveSettings(updatedSettings);
+      if (context.mounted) {
+        context.showSnackBar('Biometrics disabled');
+      }
+    }
+  }
+
   Future<void> _showChangeMasterPasswordDialog(BuildContext context, WidgetRef ref) async {
     final currentController = TextEditingController();
     final newController = TextEditingController();
@@ -219,7 +269,7 @@ class SettingsScreen extends ConsumerWidget {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Change Master Password'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -254,23 +304,107 @@ class SettingsScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Change'),
           ),
         ],
       ),
     );
 
+    if (result != true) {
+      currentController.dispose();
+      newController.dispose();
+      confirmController.dispose();
+      return;
+    }
+
+    final currentPassword = currentController.text;
+    final newPassword = newController.text;
+    final confirmPassword = confirmController.text;
+
     currentController.dispose();
     newController.dispose();
     confirmController.dispose();
 
-    if (result == true && context.mounted) {
-      context.showSnackBar('Master password changed successfully');
+    // Validate
+    if (newPassword != confirmPassword) {
+      if (context.mounted) {
+        context.showSnackBar('Passwords do not match', isError: true);
+      }
+      return;
+    }
+    if (newPassword.length < AppConstants.minMasterPasswordLength) {
+      if (context.mounted) {
+        context.showSnackBar(
+          'Password must be at least ${AppConstants.minMasterPasswordLength} characters',
+          isError: true,
+        );
+      }
+      return;
+    }
+    if (currentPassword == newPassword) {
+      if (context.mounted) {
+        context.showSnackBar('New password must be different', isError: true);
+      }
+      return;
+    }
+
+    try {
+      final authRepository = ref.read(authRepositoryProvider);
+      final encryptionService = ref.read(encryptionServiceProvider);
+      final vaultRepository = ref.read(vaultRepositoryProvider);
+
+      // 1. Verify current password
+      final oldKey = await authRepository.verifyMasterPassword(currentPassword);
+      if (oldKey == null) {
+        if (context.mounted) {
+          context.showSnackBar('Current password is incorrect', isError: true);
+        }
+        return;
+      }
+
+      // 2. Generate new salt and derive new key
+      final newSalt = encryptionService
+          .generateSecureRandomBytes(AppConstants.saltLength);
+      final newKey = await encryptionService.deriveKey(newPassword, newSalt);
+
+      // 3. Re-encrypt all password entries with new key
+      await vaultRepository.reEncryptAllEntries(oldKey, newKey);
+
+      // 4. Update secure storage
+      final newVerifyHash = encryptionService.getVerificationHash(newKey);
+      final newDbKey = encryptionService.getDatabaseKey(newKey);
+      final secureStorage = ref.read(secureStorageDatasourceProvider);
+      await secureStorage.setSalt(base64Encode(newSalt));
+      await secureStorage.setVerifyHash(newVerifyHash);
+      await secureStorage.setDbKey(newDbKey);
+
+      // 5. Update biometric key if enabled
+      final bioKey = await authRepository.getBiometricKey();
+      if (bioKey != null) {
+        await authRepository.enableBiometricKey(newKey);
+      }
+
+      // 6. Update in-memory encryption key
+      ref.read(encryptionKeyProvider.notifier).state = newKey;
+
+      // 7. Clean up
+      encryptionService.zeroMemory(oldKey);
+
+      if (context.mounted) {
+        context.showSnackBar('Master password changed successfully');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        context.showSnackBar(
+          'Failed to change password: ${e.toString()}',
+          isError: true,
+        );
+      }
     }
   }
 

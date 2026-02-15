@@ -2,7 +2,7 @@ class AppConstants {
   AppConstants._();
 
   // PBKDF2
-  static const int pbkdf2Iterations = 600000;
+  static const int pbkdf2Iterations = 100000;
   static const int keyLength = 32; // 256 bits
   static const int saltLength = 32;
   static const int ivLength = 16; // AES block size
