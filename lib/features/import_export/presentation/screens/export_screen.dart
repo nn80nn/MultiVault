@@ -1,3 +1,4 @@
+import 'dart:convert' show jsonEncode;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -367,22 +368,50 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       // Export based on format
       switch (_selectedFormat) {
         case ExportFormat.encryptedJson:
-          final bytes = EncryptedBackupExporter().export(
+          final bytes = await EncryptedBackupExporter(encryptionService).export(
             decryptedEntries,
             password: _passwordController.text,
           );
           await File(filePath).writeAsBytes(bytes);
           break;
         case ExportFormat.csv:
+          // SECURITY: CSV is plain text - warn user before export
+          final confirmed = await _showCsvWarning();
+          if (!confirmed) {
+            if (mounted) {
+              context.showSnackBar('Export cancelled', isError: false);
+            }
+            return;
+          }
           final csvContent = CsvExporter().export(decryptedEntries);
           await File(filePath).writeAsString(csvContent);
           break;
         case ExportFormat.json:
-          final bytes = EncryptedBackupExporter().export(
-            decryptedEntries,
-            password: _enableEncryption ? _passwordController.text : null,
-          );
-          await File(filePath).writeAsBytes(bytes);
+          if (_enableEncryption) {
+            final bytes = await EncryptedBackupExporter(encryptionService).export(
+              decryptedEntries,
+              password: _passwordController.text,
+            );
+            await File(filePath).writeAsBytes(bytes);
+          } else {
+            // Unencrypted JSON export
+            final jsonData = {
+              'version': 1,
+              'exportedAt': DateTime.now().toIso8601String(),
+              'entries': decryptedEntries.map((e) => {
+                'title': e.title,
+                'username': e.username,
+                'password': e.encryptedPassword, // Already decrypted
+                'url': e.url,
+                'notes': e.encryptedNotes,
+                'categoryId': e.categoryId,
+                'isFavorite': e.isFavorite,
+                'createdAt': e.createdAt.toIso8601String(),
+                'updatedAt': e.updatedAt.toIso8601String(),
+              }).toList(),
+            };
+            await File(filePath).writeAsString(jsonEncode(jsonData));
+          }
           break;
       }
 
@@ -436,6 +465,61 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         setState(() => _isExporting = false);
       }
     }
+  }
+
+  /// Shows security warning before CSV export
+  /// CSV exports passwords in PLAIN TEXT - extremely dangerous!
+  Future<bool> _showCsvWarning() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          size: 64,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: const Text('Security Warning'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'CSV exports your passwords in PLAIN TEXT without any encryption.',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text('This means:'),
+            const SizedBox(height: 8),
+            const Text('• Anyone with access to the file can read all your passwords'),
+            const Text('• The file is NOT protected in any way'),
+            const Text('• Sharing or losing this file exposes all your accounts'),
+            const SizedBox(height: 12),
+            Text(
+              'Only use CSV if you absolutely need it and will immediately delete the file after use.',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel (Recommended)'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('I Understand the Risk'),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 
   Future<void> _shareExportFile() async {

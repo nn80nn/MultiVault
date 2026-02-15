@@ -30,8 +30,9 @@ dependencies:
   # Biometrics
   local_auth: ^2.3.0
 
-  # Screen security (prevent screenshots)
-  flutter_windowmanager: ^0.2.0
+  # Security
+  flutter_windowmanager: ^0.2.0  # Screenshot protection
+  flutter_jailbreak_detection: ^1.10.0  # Root/jailbreak detection
 
   # Navigation
   go_router: ^14.8.1

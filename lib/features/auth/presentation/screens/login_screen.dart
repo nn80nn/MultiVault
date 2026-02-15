@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
+import '../../../../services/device_security_service.dart';
 import '../widgets/biometric_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -26,6 +27,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     _checkBiometricAvailability();
+    _checkDeviceSecurity();
+  }
+
+  /// Checks if device is compromised and shows warning
+  /// SECURITY: Does not block access - only warns user
+  Future<void> _checkDeviceSecurity() async {
+    try {
+      final deviceSecurityService = ref.read(deviceSecurityServiceProvider);
+      final status = await deviceSecurityService.getSecurityStatus();
+
+      if (status.isCompromised && mounted) {
+        // Show warning after a short delay to not interfere with screen initialization
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _showSecurityWarning(status, deviceSecurityService);
+          }
+        });
+      }
+    } catch (e) {
+      // Silently fail - don't block user access if check fails
+    }
   }
 
   @override
@@ -215,6 +237,57 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// Shows warning dialog for compromised devices
+  /// SECURITY: Only warns - does not block access for usability
+  void _showSecurityWarning(
+    DeviceSecurityStatus status,
+    DeviceSecurityService service,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.security,
+          size: 64,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: const Text('Device Security Warning'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              service.getWarningMessage(status),
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 16),
+            const Text('Security Implications:'),
+            const SizedBox(height: 8),
+            const Text('• Apps with root access can read vault data from memory'),
+            const Text('• Secure storage may be compromised'),
+            const Text('• Debugging tools can extract encryption keys'),
+            const Text('• SSL pinning can be bypassed'),
+            const SizedBox(height: 16),
+            Text(
+              'Using a password manager on a compromised device is NOT recommended.',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('I Understand'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
