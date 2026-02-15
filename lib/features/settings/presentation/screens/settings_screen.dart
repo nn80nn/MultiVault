@@ -387,11 +387,10 @@ class SettingsScreen extends ConsumerWidget {
 
       // 4. Update secure storage
       final newVerifyHash = encryptionService.getVerificationHash(newKey);
-      final newDbKey = encryptionService.getDatabaseKey(newKey);
       final secureStorage = ref.read(secureStorageDatasourceProvider);
       await secureStorage.setSalt(base64Encode(newSalt));
       await secureStorage.setVerifyHash(newVerifyHash);
-      await secureStorage.setDbKey(newDbKey);
+      // SECURITY: dbKey is NOT stored anymore
 
       // 5. Update biometric key if enabled
       final bioKey = await authRepository.getBiometricKey();

@@ -33,9 +33,8 @@ class SecureStorageDatasource {
       _storage.write(key: AppConstants.ssBioKey, value: key);
   Future<void> deleteBioKey() => _storage.delete(key: AppConstants.ssBioKey);
 
-  Future<String?> getDbKey() => _storage.read(key: AppConstants.ssDbKey);
-  Future<void> setDbKey(String key) =>
-      _storage.write(key: AppConstants.ssDbKey, value: key);
+  // SECURITY: dbKey methods removed - key is derived on-the-fly from master password
+  // This prevents unauthorized database access without password authentication
 
   Future<String?> getMasterConfigured() =>
       _storage.read(key: AppConstants.ssMasterConfigured);

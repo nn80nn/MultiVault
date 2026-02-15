@@ -27,14 +27,22 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> setupMasterPassword(String masterPassword) async {
     final salt = _encryptionService.generateSecureRandomBytes(AppConstants.saltLength);
     final derivedKey = await _encryptionService.deriveKey(masterPassword, salt);
-    final verifyHash = _encryptionService.getVerificationHash(derivedKey);
-    final dbKey = _encryptionService.getDatabaseKey(derivedKey);
 
-    await _secureStorage.setSalt(base64Encode(salt));
-    await _secureStorage.setVerifyHash(verifyHash);
-    await _secureStorage.setIterations(AppConstants.pbkdf2Iterations);
-    await _secureStorage.setDbKey(dbKey);
-    await _secureStorage.setMasterConfigured(true);
+    try {
+      final verifyHash = _encryptionService.getVerificationHash(derivedKey);
+
+      await _secureStorage.setSalt(base64Encode(salt));
+      await _secureStorage.setVerifyHash(verifyHash);
+      await _secureStorage.setIterations(AppConstants.pbkdf2Iterations);
+      await _secureStorage.setMasterConfigured(true);
+
+      // SECURITY: dbKey is NOT stored anymore. It's derived on-the-fly from master password
+      // This prevents database access without password authentication
+    } finally {
+      // Zero out sensitive data from memory
+      _encryptionService.zeroMemory(salt);
+      _encryptionService.zeroMemory(derivedKey);
+    }
   }
 
   @override
@@ -46,12 +54,22 @@ class AuthRepositoryImpl implements AuthRepository {
 
     final salt = base64Decode(saltBase64);
     final derivedKey = await _encryptionService.deriveKey(masterPassword, salt);
-    final computedHash = _encryptionService.getVerificationHash(derivedKey);
 
-    if (computedHash == storedHash) {
-      return derivedKey;
+    try {
+      final computedHash = _encryptionService.getVerificationHash(derivedKey);
+
+      if (computedHash == storedHash) {
+        // Success - return key, caller must zero it after use
+        return derivedKey;
+      }
+
+      // Failed - zero key before returning null
+      _encryptionService.zeroMemory(derivedKey);
+      return null;
+    } finally {
+      // Always zero the salt
+      _encryptionService.zeroMemory(salt);
     }
-    return null;
   }
 
   @override
@@ -65,15 +83,20 @@ class AuthRepositoryImpl implements AuthRepository {
     // Generate new salt and key
     final newSalt = _encryptionService.generateSecureRandomBytes(AppConstants.saltLength);
     final newKey = await _encryptionService.deriveKey(newPassword, newSalt);
-    final newVerifyHash = _encryptionService.getVerificationHash(newKey);
-    final newDbKey = _encryptionService.getDatabaseKey(newKey);
 
-    await _secureStorage.setSalt(base64Encode(newSalt));
-    await _secureStorage.setVerifyHash(newVerifyHash);
-    await _secureStorage.setDbKey(newDbKey);
+    try {
+      final newVerifyHash = _encryptionService.getVerificationHash(newKey);
 
-    // Zero old key
-    _encryptionService.zeroMemory(currentKey);
+      await _secureStorage.setSalt(base64Encode(newSalt));
+      await _secureStorage.setVerifyHash(newVerifyHash);
+
+      // SECURITY: dbKey is NOT stored. Derived on-the-fly from password.
+    } finally {
+      // Zero out sensitive data from memory
+      _encryptionService.zeroMemory(currentKey);
+      _encryptionService.zeroMemory(newSalt);
+      // Note: newKey might still be needed by caller, so don't zero it here
+    }
   }
 
   @override
