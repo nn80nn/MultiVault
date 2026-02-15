@@ -33,4 +33,14 @@ class PasswordHistoryDao extends DatabaseAccessor<AppDatabase>
           ..where((t) => t.entryId.equals(entryId)))
         .go();
   }
+
+  /// Get all password history entries (for re-encryption)
+  Future<List<PasswordHistoryEntry>> getAllHistory() {
+    return select(passwordHistoryEntries).get();
+  }
+
+  /// Update password history entry (for re-encryption)
+  Future<bool> updateHistory(PasswordHistoryEntriesCompanion entry) {
+    return update(passwordHistoryEntries).replace(entry);
+  }
 }

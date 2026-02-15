@@ -29,6 +29,20 @@ class VaultRepositoryImpl implements VaultRepository {
         _getEncryptionKey = getEncryptionKey;
 
   entity.PasswordEntry _fromDb(PasswordEntry row) {
+    // SECURITY FIX: customFields should be encrypted just like password and notes
+    // Try to decrypt customFields if present, fallback to null if decryption fails (old data)
+    String? decryptedCustomFields;
+    if (row.customFields != null && row.customFields!.isNotEmpty) {
+      try {
+        final key = _getEncryptionKey();
+        decryptedCustomFields = _encryptionService.decryptText(row.customFields!, key);
+      } catch (e) {
+        // Old unencrypted data or corrupted - return null for security
+        // Better to lose old custom fields than expose them
+        decryptedCustomFields = null;
+      }
+    }
+
     return entity.PasswordEntry(
       id: row.id,
       title: row.title,
@@ -39,7 +53,7 @@ class VaultRepositoryImpl implements VaultRepository {
       categoryId: row.categoryId,
       isFavorite: row.isFavorite,
       faviconUrl: row.faviconUrl,
-      customFields: row.customFields,
+      customFields: decryptedCustomFields,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       deletedAt: row.deletedAt,
@@ -90,6 +104,11 @@ class VaultRepositoryImpl implements VaultRepository {
         ? _encryptionService.encryptText(entry.encryptedNotes!, key)
         : null;
 
+    // SECURITY FIX: Encrypt customFields just like password and notes
+    final encryptedCustomFields = entry.customFields != null && entry.customFields!.isNotEmpty
+        ? _encryptionService.encryptText(entry.customFields!, key)
+        : null;
+
     final companion = PasswordEntriesCompanion.insert(
       id: id,
       title: entry.title,
@@ -100,7 +119,7 @@ class VaultRepositoryImpl implements VaultRepository {
       categoryId: entry.categoryId,
       isFavorite: Value(entry.isFavorite),
       faviconUrl: Value(entry.faviconUrl),
-      customFields: Value(entry.customFields),
+      customFields: Value(encryptedCustomFields),
       createdAt: now,
       updatedAt: now,
     );
@@ -142,6 +161,11 @@ class VaultRepositoryImpl implements VaultRepository {
         ? _encryptionService.encryptText(entry.encryptedNotes!, key)
         : null;
 
+    // SECURITY FIX: Encrypt customFields just like password and notes
+    final encryptedCustomFields = entry.customFields != null && entry.customFields!.isNotEmpty
+        ? _encryptionService.encryptText(entry.customFields!, key)
+        : null;
+
     final companion = PasswordEntriesCompanion(
       id: Value(entry.id),
       title: Value(entry.title),
@@ -152,7 +176,7 @@ class VaultRepositoryImpl implements VaultRepository {
       categoryId: Value(entry.categoryId),
       isFavorite: Value(entry.isFavorite),
       faviconUrl: Value(entry.faviconUrl),
-      customFields: Value(entry.customFields),
+      customFields: Value(encryptedCustomFields),
       updatedAt: Value(now),
     );
 
@@ -175,6 +199,11 @@ class VaultRepositoryImpl implements VaultRepository {
     final now = DateTime.now().toUtc();
     final key = _getEncryptionKey();
     final companions = entries.map((entry) {
+      // SECURITY FIX: Encrypt customFields during import
+      final encryptedCustomFields = entry.customFields != null && entry.customFields!.isNotEmpty
+          ? _encryptionService.encryptText(entry.customFields!, key)
+          : null;
+
       return PasswordEntriesCompanion.insert(
         id: _uuid.v4(),
         title: entry.title,
@@ -187,6 +216,7 @@ class VaultRepositoryImpl implements VaultRepository {
             : const Value.absent(),
         categoryId: entry.categoryId,
         isFavorite: Value(entry.isFavorite),
+        customFields: Value(encryptedCustomFields),
         createdAt: now,
         updatedAt: now,
       );
@@ -215,9 +245,11 @@ class VaultRepositoryImpl implements VaultRepository {
     await _entryDao.db.transaction(() async {
       final allEntries = await _entryDao.getAll(includeDeleted: true);
 
+      // SECURITY FIX: Re-encrypt password entries
       for (final entry in allEntries) {
         String decryptedPassword = '';
         String? decryptedNotes;
+        String? decryptedCustomFields;
 
         try {
           // Decrypt with old key
@@ -233,6 +265,19 @@ class VaultRepositoryImpl implements VaultRepository {
             );
           }
 
+          // SECURITY FIX: Re-encrypt customFields
+          if (entry.customFields != null && entry.customFields!.isNotEmpty) {
+            try {
+              decryptedCustomFields = _encryptionService.decryptText(
+                entry.customFields!,
+                oldKey,
+              );
+            } catch (e) {
+              // Old unencrypted customFields - keep as null for security
+              decryptedCustomFields = null;
+            }
+          }
+
           // Encrypt with new key
           final newEncPassword = _encryptionService.encryptText(
             decryptedPassword,
@@ -244,12 +289,18 @@ class VaultRepositoryImpl implements VaultRepository {
             newEncNotes = _encryptionService.encryptText(decryptedNotes, newKey);
           }
 
+          String? newEncCustomFields;
+          if (decryptedCustomFields != null && decryptedCustomFields.isNotEmpty) {
+            newEncCustomFields = _encryptionService.encryptText(decryptedCustomFields, newKey);
+          }
+
           // Update entry
           await _entryDao.updateEntry(
             PasswordEntriesCompanion(
               id: Value(entry.id),
               encryptedPassword: Value(newEncPassword),
               encryptedNotes: Value(newEncNotes),
+              customFields: Value(newEncCustomFields),
             ),
           );
 
@@ -263,6 +314,47 @@ class VaultRepositoryImpl implements VaultRepository {
           if (decryptedNotes != null) {
             _encryptionService.zeroMemory(
               Uint8List.fromList(utf8.encode(decryptedNotes)),
+            );
+          }
+          if (decryptedCustomFields != null) {
+            _encryptionService.zeroMemory(
+              Uint8List.fromList(utf8.encode(decryptedCustomFields)),
+            );
+          }
+        }
+      }
+
+      // SECURITY FIX: Re-encrypt password history
+      final allHistory = await _historyDao.getAllHistory();
+      for (final historyEntry in allHistory) {
+        String decryptedOldPassword = '';
+
+        try {
+          // Decrypt old password with old key
+          decryptedOldPassword = _encryptionService.decryptText(
+            historyEntry.encryptedOldPassword,
+            oldKey,
+          );
+
+          // Encrypt with new key
+          final newEncOldPassword = _encryptionService.encryptText(
+            decryptedOldPassword,
+            newKey,
+          );
+
+          // Update history entry
+          await _historyDao.updateHistory(
+            PasswordHistoryEntriesCompanion(
+              id: Value(historyEntry.id),
+              encryptedOldPassword: Value(newEncOldPassword),
+            ),
+          );
+
+        } finally {
+          // Zero out decrypted data from memory
+          if (decryptedOldPassword.isNotEmpty) {
+            _encryptionService.zeroMemory(
+              Uint8List.fromList(utf8.encode(decryptedOldPassword)),
             );
           }
         }
