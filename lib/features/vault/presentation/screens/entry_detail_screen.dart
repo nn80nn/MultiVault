@@ -5,7 +5,7 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/extensions/datetime_extensions.dart';
 
-class EntryDetailScreen extends ConsumerWidget {
+class EntryDetailScreen extends ConsumerStatefulWidget {
   final String entryId;
 
   const EntryDetailScreen({
@@ -14,7 +14,28 @@ class EntryDetailScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EntryDetailScreen> createState() => _EntryDetailScreenState();
+}
+
+class _EntryDetailScreenState extends ConsumerState<EntryDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Enable screenshot protection for password details
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(screenSecurityServiceProvider).enableScreenSecurity();
+    });
+  }
+
+  @override
+  void dispose() {
+    // Disable screenshot protection when leaving
+    ref.read(screenSecurityServiceProvider).disableScreenSecurity();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final vaultRepository = ref.watch(vaultRepositoryProvider);
     final categoryRepository = ref.watch(categoryRepositoryProvider);
     final clipboardService = ref.watch(clipboardServiceProvider);
@@ -22,7 +43,7 @@ class EntryDetailScreen extends ConsumerWidget {
     final encryptionKey = ref.watch(encryptionKeyProvider);
 
     return FutureBuilder(
-      future: vaultRepository.getEntryById(entryId),
+      future: vaultRepository.getEntryById(widget.entryId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -89,7 +110,7 @@ class EntryDetailScreen extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () {
-                  context.push('/vault/$entryId/edit');
+                  context.push('/vault/${widget.entryId}/edit');
                 },
               ),
               IconButton(
@@ -370,7 +391,7 @@ class EntryDetailScreen extends ConsumerWidget {
     if (confirmed == true && context.mounted) {
       try {
         final vaultRepository = ref.read(vaultRepositoryProvider);
-        await vaultRepository.softDeleteEntry(entryId);
+        await vaultRepository.softDeleteEntry(widget.entryId);
         if (context.mounted) {
           context.pop(); // Go back to list
           ScaffoldMessenger.of(context).showSnackBar(

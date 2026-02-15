@@ -21,6 +21,7 @@ import '../../features/vault/domain/repositories/vault_repository.dart';
 import '../../services/biometric_service.dart';
 import '../../services/clipboard_service.dart';
 import '../../services/encryption_service.dart';
+import '../../services/screen_security_service.dart';
 
 // Lock state
 enum LockStatus { locked, unlocked, setupRequired }
@@ -41,6 +42,10 @@ final biometricServiceProvider = Provider<BiometricService>((ref) {
 
 final clipboardServiceProvider = Provider<ClipboardService>((ref) {
   return ClipboardService();
+});
+
+final screenSecurityServiceProvider = Provider<ScreenSecurityService>((ref) {
+  return ScreenSecurityService();
 });
 
 final secureStorageDatasourceProvider =

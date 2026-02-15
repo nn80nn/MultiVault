@@ -22,7 +22,18 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen> {
   String _selectedCategoryId = 'all';
 
   @override
+  void initState() {
+    super.initState();
+    // Enable screenshot protection for password list
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(screenSecurityServiceProvider).enableScreenSecurity();
+    });
+  }
+
+  @override
   void dispose() {
+    // Disable screenshot protection when leaving
+    ref.read(screenSecurityServiceProvider).disableScreenSecurity();
     _searchController.dispose();
     super.dispose();
   }
