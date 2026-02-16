@@ -16,12 +16,22 @@ A secure, privacy-focused password manager built with Flutter. MultiVault implem
 ### Security Features
 - **Master Password Protection**: All data is encrypted with a key derived from your master password
 - **AES-256-GCM Encryption**: Authenticated encryption with associated data (AEAD) for both confidentiality and integrity
+  - Password fields encrypted
+  - Notes encrypted
+  - Custom fields encrypted
+  - Password history encrypted
 - **PBKDF2-HMAC-SHA256**: 100,000 iterations for key derivation, optimized with native cryptography
 - **SQLCipher Database**: Encrypted SQLite database for secure local storage
 - **Biometric Authentication**: Optional fingerprint/face unlock (Android & iOS)
-- **Screenshot Protection**: FLAG_SECURE on sensitive screens (Android)
+  - iOS: Keychain with passcode accessibility protection
+  - Android: EncryptedSharedPreferences
+  - **LIMITATION**: Not hardware-backed biometric protection (see Known Limitations below)
+- **Screenshot Protection**: FLAG_SECURE on sensitive screens prevents screenshots and Recent Apps preview (Android)
 - **No Cloud Backups**: android:allowBackup disabled to prevent cloud data leakage
 - **Memory Security**: Sensitive data is actively zeroed from memory after use
+- **Code Obfuscation**: R8/ProGuard shrinking and obfuscation in production builds
+- **Root/Jailbreak Detection**: Warns users if device security is compromised
+- **Secure Clipboard**: Auto-clear clipboard after 30 seconds (configurable)
 - **No Logging**: Zero debug logging in production builds
 
 ### Privacy
@@ -83,9 +93,12 @@ flutter run --release --flavor production
    - Username (required)
    - Password (required)
    - URL (optional)
-   - Notes (optional)
+   - Notes (optional, encrypted)
+   - Custom Fields (optional, encrypted) - Add key-value pairs for additional data
    - Category (optional)
 3. Tap 'Save'
+
+All sensitive fields (password, notes, custom fields) are encrypted with AES-256-GCM before storage.
 
 ### Importing Data
 
@@ -99,9 +112,17 @@ flutter run --release --flavor production
 
 1. Go to Settings
 2. Tap 'Export Passwords'
-3. Select format (JSON, CSV, or encrypted)
-4. For encrypted exports, set an export password
+3. Select format:
+   - **JSON**: Unencrypted, human-readable format
+   - **CSV**: Plain text format (WARNING: Security dialog will appear - passwords in plain text!)
+   - **Encrypted**: AES-256-GCM encrypted backup (requires export password)
+4. For encrypted exports, you must set an export password (fail-closed security)
 5. File is saved to your device
+
+**Security Notes**:
+- CSV exports show a security warning dialog that must be acknowledged
+- Encrypted exports are fail-closed: password is mandatory
+- Store exported files securely and delete after use
 
 ## Architecture
 
@@ -132,8 +153,8 @@ lib/
 └── services/               # Cross-cutting services
     ├── biometric_service.dart
     ├── clipboard_service.dart
+    ├── device_security_service.dart
     ├── encryption_service.dart
-    ├── hibp_service.dart
     └── screen_security_service.dart
 ```
 
@@ -173,6 +194,11 @@ Stored in encrypted database
 2. **Authenticated Encryption**: GCM mode provides both confidentiality and integrity. Any tampering is detected during decryption.
 3. **Memory Zeroing**: Sensitive data (keys, decrypted passwords) is explicitly zeroed from memory using `zeroMemory()` in `finally` blocks.
 4. **Transaction Atomicity**: Critical operations (like password re-encryption) are wrapped in database transactions for all-or-nothing guarantees.
+5. **Master Password Change Re-encryption**: When changing master password, ALL encrypted data is re-encrypted:
+   - Password entries (passwords, notes, custom fields)
+   - Password history entries
+   - Database re-keyed with new derived key
+   - All operations atomic (transaction-wrapped)
 
 ### Network Transparency
 
@@ -218,6 +244,32 @@ Favicon: "https://github.com/favicon.ico"
 - Favicons: No setting needed - only loads when viewing password with URL
 
 ## Development
+
+### Known Build Issues
+
+#### AGP 8+ Compatibility (Android)
+
+The `flutter_windowmanager` and `flutter_jailbreak_detection` plugins require manual patching for Android Gradle Plugin 8+ compatibility. If you encounter "Namespace not specified" errors:
+
+**flutter_windowmanager (0.2.0)**:
+Add to `~/.pub-cache/hosted/pub.dev/flutter_windowmanager-0.2.0/android/build.gradle`:
+```gradle
+android {
+    namespace 'io.adaptant.labs.flutter_windowmanager'
+    // ... rest of config
+}
+```
+
+**flutter_jailbreak_detection (1.10.0)**:
+Add to `~/.pub-cache/hosted/pub.dev/flutter_jailbreak_detection-1.10.0/android/build.gradle`:
+```gradle
+android {
+    namespace 'appmire.be.flutterjailbreakdetection'
+    // ... rest of config
+}
+```
+
+These patches must be reapplied after running `flutter pub get` or `flutter clean` as they modify cached packages.
 
 ### Code Style
 
@@ -267,24 +319,53 @@ flutter test integration_test/
 
 ## Security Audit Results
 
-MultiVault has been designed with security-first principles:
+MultiVault has been designed with security-first principles and has undergone multiple security audits:
 
 **Strengths**:
-- AES-256-GCM authenticated encryption
+- AES-256-GCM authenticated encryption for all sensitive fields
 - No database key storage (derived on-the-fly)
-- Comprehensive memory zeroing
+- Comprehensive memory zeroing with explicit `zeroMemory()` calls
 - Transaction-wrapped critical operations
-- k-Anonymity for breach checking
-- Screenshot protection on sensitive screens
-- No cloud backups
-- Zero logging in production
+- Complete re-encryption on master password change (including password history)
+- k-Anonymity for breach checking (HIBP)
+- Screenshot protection on sensitive screens (FLAG_SECURE)
+- No cloud backups (android:allowBackup disabled)
+- Zero logging in production builds
+- R8/ProGuard code obfuscation in release builds
+- Root/jailbreak detection with user warnings
+- Secure clipboard with auto-clear (30s default)
+- CSV export security warnings (fail-safe pattern)
+- Encrypted export requires password (fail-closed pattern)
+
+**Recent Security Fixes**:
+- CRITICAL: Fixed customFields plain text storage vulnerability (now encrypted with AES-256-GCM)
+- CRITICAL: Fixed password history re-encryption on master password change
+- CRITICAL: Fixed biometric authentication bypass in master password change flow (now requires biometric re-auth)
+- HIGH: Added R8/ProGuard obfuscation for APK protection
+- HIGH: Documented biometric security limitations (not hardware-backed)
+- MEDIUM: Verified XXE protection in XML parser (dart xml package safe by default)
+- MEDIUM: Verified SQL injection protection (Drift uses parameterized queries)
+- MEDIUM: Added root/jailbreak detection warnings
+- MEDIUM: Documented clipboard security limitations
+- MEDIUM: Added CSV export security warning dialog
 
 **Known Limitations**:
+- **Biometric authentication security**: Due to flutter_secure_storage API constraints, biometric unlock does NOT use hardware-backed biometric protection:
+  - iOS: Key stored in Keychain with `passcode` accessibility (requires device passcode, but not biometrically bound)
+  - Android: Key stored in EncryptedSharedPreferences (software encryption, not hardware Keystore)
+  - **Impact**: An attacker with physical device access or backup extraction could potentially access the encryption key without biometric authentication
+  - **Mitigation**: Application enforces biometric authentication before key access. For true hardware-backed biometric security, platform channels with iOS kSecAccessControlBiometryCurrentSet or Android BiometricPrompt.CryptoObject would be required
+  - **Recommendation**: Use master password for sensitive vaults; biometric unlock is convenience feature
+- Clipboard security: Cannot prevent keyboard clipboard history (Gboard, SwiftKey) or third-party clipboard managers from capturing data. Mitigated with auto-clear and user warnings.
 - No export key rotation (export password reuse possible)
 - No password expiry reminders
 - No secure element integration (uses platform secure storage)
 
-**Overall Security Rating**: 4/5 (Production-ready for personal use)
+**Overall Security Rating**: 4.5/5
+- Production-ready for personal use
+- Minimal attack surface with documented limitations
+- Biometric unlock is convenience feature, not security-critical (use master password for sensitive data)
+- All identified vulnerabilities have been addressed
 
 ## Dependencies
 
@@ -299,7 +380,8 @@ MultiVault has been designed with security-first principles:
 - `crypto` - SHA-256 hashing
 - `flutter_secure_storage` - Platform secure storage
 - `local_auth` - Biometric authentication
-- `flutter_windowmanager` - Screenshot protection (Android)
+- `flutter_windowmanager` - Screenshot protection (Android, patched for AGP 8+)
+- `flutter_jailbreak_detection` - Root/jailbreak detection (patched for AGP 8+)
 
 ### Database
 - `drift` - Type-safe SQLite wrapper

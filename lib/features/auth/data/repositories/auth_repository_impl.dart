@@ -99,8 +99,22 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// SECURITY FIX: Store encryption key with mandatory biometric authentication
+  ///
+  /// CRITICAL: Caller MUST authenticate biometric BEFORE calling this method!
+  /// This method does NOT verify authentication - it assumes caller already did.
+  ///
+  /// The key is stored in secure storage but without hardware-backed biometric
+  /// protection due to flutter_secure_storage limitations. Application-level
+  /// biometric verification is REQUIRED before this call.
   @override
   Future<void> enableBiometricKey(Uint8List encryptionKey) async {
+    // SECURITY: Key is stored Base64-encoded in secure storage
+    // iOS: Keychain with 'passcode' accessibility
+    // Android: EncryptedSharedPreferences
+    //
+    // WARNING: This is NOT hardware-backed biometric protection!
+    // Caller must verify biometric authentication before calling this method.
     await _secureStorage.setBioKey(base64Encode(encryptionKey));
   }
 
@@ -109,8 +123,22 @@ class AuthRepositoryImpl implements AuthRepository {
     await _secureStorage.deleteBioKey();
   }
 
+  /// SECURITY FIX: Retrieve biometric-protected encryption key
+  ///
+  /// CRITICAL: Caller MUST authenticate biometric BEFORE calling this method!
+  /// This method does NOT verify authentication - it assumes caller already did.
+  ///
+  /// LIMITATION: Due to flutter_secure_storage API constraints, the key is stored
+  /// encrypted but NOT protected by hardware biometric validation. An attacker with
+  /// device access could potentially extract the key without biometric auth.
+  ///
+  /// For true hardware-backed biometric security, platform channels with
+  /// iOS kSecAccessControlBiometryCurrentSet or Android BiometricPrompt.CryptoObject
+  /// would be required.
   @override
   Future<Uint8List?> getBiometricKey() async {
+    // SECURITY: This method assumes caller already authenticated biometric!
+    // Do NOT call this without BiometricService.authenticate() first.
     final keyBase64 = await _secureStorage.getBioKey();
     if (keyBase64 == null) return null;
     return base64Decode(keyBase64);

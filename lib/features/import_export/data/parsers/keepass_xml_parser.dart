@@ -8,11 +8,24 @@ class KeepassXmlParser {
   /// Parses KeePass XML format
   /// Structure: <Root><Group><Entry> with <String><Key>Title</Key><Value>...</Value></String> elements
   /// Returns list of PasswordEntry objects
+  ///
+  /// SECURITY: XXE (XML External Entity) Protection
+  /// The dart xml package (^6.5.0) is safe by default:
+  /// - Does NOT process external entities
+  /// - DTD declarations are ignored
+  /// - No DOCTYPE expansion
+  /// - Cannot read local files via XML entities
+  ///
+  /// ATTACK EXAMPLE (would NOT work with this parser):
+  /// `<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>`
+  /// `<root>&xxe;</root>`
+  ///
+  /// The parser will simply ignore the entity and won't read /etc/passwd
   List<PasswordEntry> parse(String content) {
     try {
       final List<PasswordEntry> entries = [];
 
-      // Parse XML
+      // Parse XML (safe - no external entity processing)
       final document = XmlDocument.parse(content);
 
       // Find the Root element

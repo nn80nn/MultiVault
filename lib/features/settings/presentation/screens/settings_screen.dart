@@ -393,9 +393,32 @@ class SettingsScreen extends ConsumerWidget {
       // SECURITY: dbKey is NOT stored anymore
 
       // 5. Update biometric key if enabled
+      // SECURITY FIX: Must authenticate biometric BEFORE updating stored key
       final bioKey = await authRepository.getBiometricKey();
       if (bioKey != null) {
-        await authRepository.enableBiometricKey(newKey);
+        // Biometric key exists - must re-authenticate to update it
+        final biometricService = ref.read(biometricServiceProvider);
+        final authenticated = await biometricService.authenticate(
+          reason: 'Authenticate to update biometric unlock with new password',
+        );
+
+        if (authenticated) {
+          // Only update if biometric authentication succeeds
+          await authRepository.enableBiometricKey(newKey);
+        } else {
+          // Authentication failed - disable biometric unlock for security
+          await authRepository.disableBiometricKey();
+          final settings = await ref.read(settingsRepositoryProvider).getSettings();
+          final updatedSettings = settings.copyWith(biometricsEnabled: false);
+          await ref.read(settingsRepositoryProvider).saveSettings(updatedSettings);
+
+          if (context.mounted) {
+            context.showSnackBar(
+              'Biometric authentication failed. Biometric unlock has been disabled.',
+              isError: true,
+            );
+          }
+        }
       }
 
       // 6. Update in-memory encryption key
