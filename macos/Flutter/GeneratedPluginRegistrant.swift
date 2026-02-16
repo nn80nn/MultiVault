@@ -5,6 +5,7 @@
 import FlutterMacOS
 import Foundation
 
+import cryptography_flutter
 import file_picker
 import flutter_secure_storage_macos
 import local_auth_darwin
@@ -14,6 +15,7 @@ import shared_preferences_foundation
 import sqlcipher_flutter_libs
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+  CryptographyFlutterPlugin.register(with: registry.registrar(forPlugin: "CryptographyFlutterPlugin"))
   FilePickerPlugin.register(with: registry.registrar(forPlugin: "FilePickerPlugin"))
   FlutterSecureStoragePlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStoragePlugin"))
   LocalAuthPlugin.register(with: registry.registrar(forPlugin: "LocalAuthPlugin"))

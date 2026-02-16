@@ -201,6 +201,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.0"
+  cryptography_flutter:
+    dependency: "direct main"
+    description:
+      name: cryptography_flutter
+      sha256: d1c7e7a31a072d63b27ce0537b89868f9bda9188f2b1651ae728a295762921d4
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.4"
   csv:
     dependency: "direct main"
     description:
@@ -310,6 +318,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.2"
+  flutter_jailbreak_detection:
+    dependency: "direct main"
+    description:
+      name: flutter_jailbreak_detection
+      sha256: "67ff11ea41965152d24db7104da1f9b343f94ada64c2a9e309ec4d753a12d281"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.10.0"
   flutter_lints:
     dependency: "direct dev"
     description:

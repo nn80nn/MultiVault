@@ -249,27 +249,28 @@ Favicon: "https://github.com/favicon.ico"
 
 #### AGP 8+ Compatibility (Android)
 
-The `flutter_windowmanager` and `flutter_jailbreak_detection` plugins require manual patching for Android Gradle Plugin 8+ compatibility. If you encounter "Namespace not specified" errors:
-
-**flutter_windowmanager (0.2.0)**:
-Add to `~/.pub-cache/hosted/pub.dev/flutter_windowmanager-0.2.0/android/build.gradle`:
-```gradle
-android {
-    namespace 'io.adaptant.labs.flutter_windowmanager'
-    // ... rest of config
-}
-```
+The `flutter_jailbreak_detection` plugin requires manual patching for Android Gradle Plugin 8+ compatibility. If you encounter "Namespace not specified" or JVM target errors:
 
 **flutter_jailbreak_detection (1.10.0)**:
 Add to `~/.pub-cache/hosted/pub.dev/flutter_jailbreak_detection-1.10.0/android/build.gradle`:
 ```gradle
 android {
     namespace 'appmire.be.flutterjailbreakdetection'
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
     // ... rest of config
 }
 ```
 
-These patches must be reapplied after running `flutter pub get` or `flutter clean` as they modify cached packages.
+This patch must be reapplied after running `flutter pub get` or `flutter clean` as it modifies cached packages.
+
+**Note**: `flutter_windowmanager` was replaced with a custom platform channel in `MainActivity.kt` due to incompatibility with Flutter V2 embedding.
 
 ### Code Style
 
@@ -380,7 +381,7 @@ MultiVault has been designed with security-first principles and has undergone mu
 - `crypto` - SHA-256 hashing
 - `flutter_secure_storage` - Platform secure storage
 - `local_auth` - Biometric authentication
-- `flutter_windowmanager` - Screenshot protection (Android, patched for AGP 8+)
+- Custom platform channel (`MainActivity.kt`) - Screenshot protection via FLAG_SECURE (Android)
 - `flutter_jailbreak_detection` - Root/jailbreak detection (patched for AGP 8+)
 
 ### Database

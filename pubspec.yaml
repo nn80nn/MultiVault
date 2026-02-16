@@ -22,6 +22,7 @@ dependencies:
 
   # Cryptography
   cryptography: ^2.7.0
+  cryptography_flutter: ^2.3.2  # Native acceleration for PBKDF2
   encrypt: ^5.0.3
 
   # Secure Storage
@@ -30,9 +31,10 @@ dependencies:
   # Biometrics
   local_auth: ^2.3.0
 
-  # Security - PATCHED for AGP 8+ compatibility
-  flutter_windowmanager: ^0.2.0  # Screenshot protection - PATCHED with namespace
-  flutter_jailbreak_detection: ^1.10.0  # Root/jailbreak detection - PATCHED with namespace
+  # Security
+  # Screenshot protection: custom platform channel (see MainActivity.kt)
+  # flutter_windowmanager removed - uses deprecated V1 embedding API
+  flutter_jailbreak_detection: ^1.10.0  # Root/jailbreak detection - PATCHED for AGP 8+
 
   # Navigation
   go_router: ^14.8.1

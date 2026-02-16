@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import '../../../../core/constants/db_constants.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/utils/password_strength.dart';
@@ -82,6 +87,14 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     try {
       final authRepository = ref.read(authRepositoryProvider);
       final encryptionService = ref.read(encryptionServiceProvider);
+
+      // Delete any stale database file from a previous setup attempt
+      // Without this, SQLCipher would try to open an old file with the new key → HMAC failure
+      final dbFolder = await getApplicationDocumentsDirectory();
+      final dbFile = File(p.join(dbFolder.path, DbConstants.dbFileName));
+      if (await dbFile.exists()) {
+        await dbFile.delete();
+      }
 
       // Setup master password - this stores salt, verifyHash, and dbKey in secure storage
       await authRepository.setupMasterPassword(_passwordController.text);

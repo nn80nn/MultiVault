@@ -81,5 +81,8 @@ class SecureStorageDatasource {
   Future<void> setMasterConfigured(bool value) => _storage.write(
       key: AppConstants.ssMasterConfigured, value: value.toString());
 
-  Future<void> deleteAll() => _storage.deleteAll();
+  Future<void> deleteAll() async {
+    await _storage.deleteAll();
+    await _biometricStorage.deleteAll();
+  }
 }

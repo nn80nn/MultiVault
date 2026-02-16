@@ -24,22 +24,28 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen> {
   @override
   void initState() {
     super.initState();
-    // TEMPORARILY DISABLED: Screenshot protection (plugin AGP compatibility issue)
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   ref.read(screenSecurityServiceProvider).enableScreenSecurity();
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(screenSecurityServiceProvider).enableScreenSecurity();
+    });
   }
 
   @override
   void dispose() {
-    // TEMPORARILY DISABLED: Screenshot protection (plugin AGP compatibility issue)
-    // ref.read(screenSecurityServiceProvider).disableScreenSecurity();
+    ref.read(screenSecurityServiceProvider).disableScreenSecurity();
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Guard: database may not be initialized yet during navigation transition
+    final db = ref.watch(appDatabaseProvider);
+    if (db == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final vaultRepository = ref.watch(vaultRepositoryProvider);
     final categoryRepository = ref.watch(categoryRepositoryProvider);
     final clipboardService = ref.watch(clipboardServiceProvider);

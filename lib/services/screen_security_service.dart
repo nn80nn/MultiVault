@@ -1,15 +1,18 @@
 import 'dart:io';
 
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
+import 'package:flutter/services.dart';
 
 /// Service to manage screen security (prevent screenshots and screen recording)
+/// Uses native platform channel instead of flutter_windowmanager (deprecated V1 embedding)
 class ScreenSecurityService {
+  static const _channel = MethodChannel('com.multivault/screen_security');
+
   /// Enable screen security (FLAG_SECURE on Android)
   /// Prevents screenshots, screen recording, and appearing in recent apps
   Future<void> enableScreenSecurity() async {
     if (Platform.isAndroid) {
       try {
-        await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+        await _channel.invokeMethod('enableSecure');
       } catch (e) {
         // Silently fail if not supported on this device
         // Better to have app work without protection than crash
@@ -22,7 +25,7 @@ class ScreenSecurityService {
   Future<void> disableScreenSecurity() async {
     if (Platform.isAndroid) {
       try {
-        await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+        await _channel.invokeMethod('disableSecure');
       } catch (e) {
         // Silently fail
       }

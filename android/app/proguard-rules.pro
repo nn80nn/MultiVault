@@ -12,6 +12,11 @@
 # Keep Dart VM Service Protocol
 -keep class io.flutter.embedding.** { *; }
 
+# Google Play Core (referenced by Flutter deferred components)
+-dontwarn com.google.android.play.core.splitcompat.**
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
+
 # Gson uses generic type information stored in a class file when working with fields
 -keepattributes Signature
 

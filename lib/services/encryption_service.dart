@@ -8,39 +8,9 @@ import 'package:flutter/foundation.dart';
 
 import '../core/constants/app_constants.dart';
 
-class _DeriveKeyParams {
-  final String masterPassword;
-  final Uint8List salt;
-  final int iterations;
-  final int keyLength;
-
-  _DeriveKeyParams({
-    required this.masterPassword,
-    required this.salt,
-    required this.iterations,
-    required this.keyLength,
-  });
-}
-
-Future<Uint8List> _deriveKeyInIsolate(_DeriveKeyParams params) async {
-  final pbkdf2 = Pbkdf2(
-    macAlgorithm: Hmac.sha256(),
-    iterations: params.iterations,
-    bits: params.keyLength * 8,
-  );
-
-  final secretKey = await pbkdf2.deriveKey(
-    secretKey: SecretKey(utf8.encode(params.masterPassword)),
-    nonce: params.salt,
-  );
-
-  final keyBytes = await secretKey.extractBytes();
-  return Uint8List.fromList(keyBytes);
-}
-
 class EncryptionService {
   /// Derives a 256-bit key from master password using PBKDF2-HMAC-SHA256
-  /// Runs in a separate isolate to avoid blocking the UI thread
+  /// Uses cryptography_flutter for native acceleration (no isolate needed)
   Future<Uint8List> deriveKey(String masterPassword, Uint8List salt) async {
     if (masterPassword.isEmpty) {
       throw ArgumentError('Master password cannot be empty');
@@ -49,15 +19,19 @@ class EncryptionService {
       throw ArgumentError('Invalid salt length: expected ${AppConstants.saltLength} bytes');
     }
 
-    return compute(
-      _deriveKeyInIsolate,
-      _DeriveKeyParams(
-        masterPassword: masterPassword,
-        salt: salt,
-        iterations: AppConstants.pbkdf2Iterations,
-        keyLength: AppConstants.keyLength,
-      ),
+    final pbkdf2 = Pbkdf2(
+      macAlgorithm: Hmac.sha256(),
+      iterations: AppConstants.pbkdf2Iterations,
+      bits: AppConstants.keyLength * 8,
     );
+
+    final secretKey = await pbkdf2.deriveKey(
+      secretKey: SecretKey(utf8.encode(masterPassword)),
+      nonce: salt,
+    );
+
+    final keyBytes = await secretKey.extractBytes();
+    return Uint8List.fromList(keyBytes);
   }
 
   /// Generates cryptographically secure random bytes
