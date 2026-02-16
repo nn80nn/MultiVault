@@ -18,6 +18,7 @@ _$PasswordEntryImpl _$$PasswordEntryImplFromJson(Map<String, dynamic> json) =>
       isFavorite: json['isFavorite'] as bool? ?? false,
       faviconUrl: json['faviconUrl'] as String?,
       customFields: json['customFields'] as String?,
+      encryptedTotpSecret: json['encryptedTotpSecret'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       deletedAt: json['deletedAt'] == null
@@ -37,6 +38,7 @@ Map<String, dynamic> _$$PasswordEntryImplToJson(_$PasswordEntryImpl instance) =>
       'isFavorite': instance.isFavorite,
       'faviconUrl': instance.faviconUrl,
       'customFields': instance.customFields,
+      'encryptedTotpSecret': instance.encryptedTotpSecret,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'deletedAt': instance.deletedAt?.toIso8601String(),

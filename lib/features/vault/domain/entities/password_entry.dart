@@ -16,6 +16,7 @@ class PasswordEntry with _$PasswordEntry {
     @Default(false) bool isFavorite,
     String? faviconUrl,
     String? customFields,
+    String? encryptedTotpSecret,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,

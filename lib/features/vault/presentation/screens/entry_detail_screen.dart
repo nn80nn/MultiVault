@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/extensions/datetime_extensions.dart';
+import '../../../totp/presentation/widgets/totp_display.dart';
 
 class EntryDetailScreen extends ConsumerStatefulWidget {
   final String entryId;
@@ -81,9 +82,10 @@ class _EntryDetailScreenState extends ConsumerState<EntryDetailScreen> {
 
         final entry = snapshot.data!;
 
-        // Decrypt password and notes
+        // Decrypt password, notes, and TOTP secret
         String? decryptedPassword;
         String? decryptedNotes;
+        String? decryptedTotpSecret;
         if (encryptionKey != null) {
           try {
             decryptedPassword = encryptionService.decryptText(
@@ -93,6 +95,12 @@ class _EntryDetailScreenState extends ConsumerState<EntryDetailScreen> {
             if (entry.encryptedNotes != null) {
               decryptedNotes = encryptionService.decryptText(
                 entry.encryptedNotes!,
+                encryptionKey,
+              );
+            }
+            if (entry.encryptedTotpSecret != null) {
+              decryptedTotpSecret = encryptionService.decryptText(
+                entry.encryptedTotpSecret!,
                 encryptionKey,
               );
             }
@@ -188,6 +196,13 @@ class _EntryDetailScreenState extends ConsumerState<EntryDetailScreen> {
                             },
                           ),
                         const SizedBox(height: 16),
+
+                        // TOTP
+                        if (decryptedTotpSecret != null &&
+                            decryptedTotpSecret.isNotEmpty) ...[
+                          TotpDisplay(secret: decryptedTotpSecret),
+                          const SizedBox(height: 16),
+                        ],
 
                         // URL
                         if (entry.url != null && entry.url!.isNotEmpty) ...[

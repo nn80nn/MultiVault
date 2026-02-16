@@ -54,6 +54,7 @@ class VaultRepositoryImpl implements VaultRepository {
       isFavorite: row.isFavorite,
       faviconUrl: row.faviconUrl,
       customFields: decryptedCustomFields,
+      encryptedTotpSecret: row.encryptedTotpSecret,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       deletedAt: row.deletedAt,
@@ -109,6 +110,10 @@ class VaultRepositoryImpl implements VaultRepository {
         ? _encryptionService.encryptText(entry.customFields!, key)
         : null;
 
+    final encryptedTotp = entry.encryptedTotpSecret != null && entry.encryptedTotpSecret!.isNotEmpty
+        ? _encryptionService.encryptText(entry.encryptedTotpSecret!, key)
+        : null;
+
     final companion = PasswordEntriesCompanion.insert(
       id: id,
       title: entry.title,
@@ -120,6 +125,7 @@ class VaultRepositoryImpl implements VaultRepository {
       isFavorite: Value(entry.isFavorite),
       faviconUrl: Value(entry.faviconUrl),
       customFields: Value(encryptedCustomFields),
+      encryptedTotpSecret: Value(encryptedTotp),
       createdAt: now,
       updatedAt: now,
     );
@@ -166,6 +172,10 @@ class VaultRepositoryImpl implements VaultRepository {
         ? _encryptionService.encryptText(entry.customFields!, key)
         : null;
 
+    final encryptedTotp = entry.encryptedTotpSecret != null && entry.encryptedTotpSecret!.isNotEmpty
+        ? _encryptionService.encryptText(entry.encryptedTotpSecret!, key)
+        : null;
+
     final companion = PasswordEntriesCompanion(
       id: Value(entry.id),
       title: Value(entry.title),
@@ -177,6 +187,7 @@ class VaultRepositoryImpl implements VaultRepository {
       isFavorite: Value(entry.isFavorite),
       faviconUrl: Value(entry.faviconUrl),
       customFields: Value(encryptedCustomFields),
+      encryptedTotpSecret: Value(encryptedTotp),
       updatedAt: Value(now),
     );
 

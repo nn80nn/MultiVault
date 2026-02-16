@@ -590,6 +590,17 @@ class $PasswordEntriesTable extends PasswordEntries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _encryptedTotpSecretMeta =
+      const VerificationMeta('encryptedTotpSecret');
+  @override
+  late final GeneratedColumn<String> encryptedTotpSecret =
+      GeneratedColumn<String>(
+        'encrypted_totp_secret',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -635,6 +646,7 @@ class $PasswordEntriesTable extends PasswordEntries
     isFavorite,
     faviconUrl,
     customFields,
+    encryptedTotpSecret,
     createdAt,
     updatedAt,
     deletedAt,
@@ -727,6 +739,15 @@ class $PasswordEntriesTable extends PasswordEntries
         ),
       );
     }
+    if (data.containsKey('encrypted_totp_secret')) {
+      context.handle(
+        _encryptedTotpSecretMeta,
+        encryptedTotpSecret.isAcceptableOrUnknown(
+          data['encrypted_totp_secret']!,
+          _encryptedTotpSecretMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -798,6 +819,10 @@ class $PasswordEntriesTable extends PasswordEntries
         DriftSqlType.string,
         data['${effectivePrefix}custom_fields'],
       ),
+      encryptedTotpSecret: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encrypted_totp_secret'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -830,6 +855,7 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
   final bool isFavorite;
   final String? faviconUrl;
   final String? customFields;
+  final String? encryptedTotpSecret;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -844,6 +870,7 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
     required this.isFavorite,
     this.faviconUrl,
     this.customFields,
+    this.encryptedTotpSecret,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -868,6 +895,9 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
     }
     if (!nullToAbsent || customFields != null) {
       map['custom_fields'] = Variable<String>(customFields);
+    }
+    if (!nullToAbsent || encryptedTotpSecret != null) {
+      map['encrypted_totp_secret'] = Variable<String>(encryptedTotpSecret);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -895,6 +925,9 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
       customFields: customFields == null && nullToAbsent
           ? const Value.absent()
           : Value(customFields),
+      encryptedTotpSecret: encryptedTotpSecret == null && nullToAbsent
+          ? const Value.absent()
+          : Value(encryptedTotpSecret),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -919,6 +952,9 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       faviconUrl: serializer.fromJson<String?>(json['faviconUrl']),
       customFields: serializer.fromJson<String?>(json['customFields']),
+      encryptedTotpSecret: serializer.fromJson<String?>(
+        json['encryptedTotpSecret'],
+      ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -938,6 +974,7 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
       'isFavorite': serializer.toJson<bool>(isFavorite),
       'faviconUrl': serializer.toJson<String?>(faviconUrl),
       'customFields': serializer.toJson<String?>(customFields),
+      'encryptedTotpSecret': serializer.toJson<String?>(encryptedTotpSecret),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -955,6 +992,7 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
     bool? isFavorite,
     Value<String?> faviconUrl = const Value.absent(),
     Value<String?> customFields = const Value.absent(),
+    Value<String?> encryptedTotpSecret = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -971,6 +1009,9 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
     isFavorite: isFavorite ?? this.isFavorite,
     faviconUrl: faviconUrl.present ? faviconUrl.value : this.faviconUrl,
     customFields: customFields.present ? customFields.value : this.customFields,
+    encryptedTotpSecret: encryptedTotpSecret.present
+        ? encryptedTotpSecret.value
+        : this.encryptedTotpSecret,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -999,6 +1040,9 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
       customFields: data.customFields.present
           ? data.customFields.value
           : this.customFields,
+      encryptedTotpSecret: data.encryptedTotpSecret.present
+          ? data.encryptedTotpSecret.value
+          : this.encryptedTotpSecret,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -1018,6 +1062,7 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
           ..write('isFavorite: $isFavorite, ')
           ..write('faviconUrl: $faviconUrl, ')
           ..write('customFields: $customFields, ')
+          ..write('encryptedTotpSecret: $encryptedTotpSecret, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -1037,6 +1082,7 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
     isFavorite,
     faviconUrl,
     customFields,
+    encryptedTotpSecret,
     createdAt,
     updatedAt,
     deletedAt,
@@ -1055,6 +1101,7 @@ class PasswordEntry extends DataClass implements Insertable<PasswordEntry> {
           other.isFavorite == this.isFavorite &&
           other.faviconUrl == this.faviconUrl &&
           other.customFields == this.customFields &&
+          other.encryptedTotpSecret == this.encryptedTotpSecret &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -1071,6 +1118,7 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
   final Value<bool> isFavorite;
   final Value<String?> faviconUrl;
   final Value<String?> customFields;
+  final Value<String?> encryptedTotpSecret;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -1086,6 +1134,7 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
     this.isFavorite = const Value.absent(),
     this.faviconUrl = const Value.absent(),
     this.customFields = const Value.absent(),
+    this.encryptedTotpSecret = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -1102,6 +1151,7 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
     this.isFavorite = const Value.absent(),
     this.faviconUrl = const Value.absent(),
     this.customFields = const Value.absent(),
+    this.encryptedTotpSecret = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
@@ -1124,6 +1174,7 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
     Expression<bool>? isFavorite,
     Expression<String>? faviconUrl,
     Expression<String>? customFields,
+    Expression<String>? encryptedTotpSecret,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -1140,6 +1191,8 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
       if (isFavorite != null) 'is_favorite': isFavorite,
       if (faviconUrl != null) 'favicon_url': faviconUrl,
       if (customFields != null) 'custom_fields': customFields,
+      if (encryptedTotpSecret != null)
+        'encrypted_totp_secret': encryptedTotpSecret,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -1158,6 +1211,7 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
     Value<bool>? isFavorite,
     Value<String?>? faviconUrl,
     Value<String?>? customFields,
+    Value<String?>? encryptedTotpSecret,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -1174,6 +1228,7 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
       isFavorite: isFavorite ?? this.isFavorite,
       faviconUrl: faviconUrl ?? this.faviconUrl,
       customFields: customFields ?? this.customFields,
+      encryptedTotpSecret: encryptedTotpSecret ?? this.encryptedTotpSecret,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -1214,6 +1269,11 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
     if (customFields.present) {
       map['custom_fields'] = Variable<String>(customFields.value);
     }
+    if (encryptedTotpSecret.present) {
+      map['encrypted_totp_secret'] = Variable<String>(
+        encryptedTotpSecret.value,
+      );
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1242,6 +1302,7 @@ class PasswordEntriesCompanion extends UpdateCompanion<PasswordEntry> {
           ..write('isFavorite: $isFavorite, ')
           ..write('faviconUrl: $faviconUrl, ')
           ..write('customFields: $customFields, ')
+          ..write('encryptedTotpSecret: $encryptedTotpSecret, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -2604,6 +2665,7 @@ typedef $$PasswordEntriesTableCreateCompanionBuilder =
       Value<bool> isFavorite,
       Value<String?> faviconUrl,
       Value<String?> customFields,
+      Value<String?> encryptedTotpSecret,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
@@ -2621,6 +2683,7 @@ typedef $$PasswordEntriesTableUpdateCompanionBuilder =
       Value<bool> isFavorite,
       Value<String?> faviconUrl,
       Value<String?> customFields,
+      Value<String?> encryptedTotpSecret,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -2735,6 +2798,11 @@ class $$PasswordEntriesTableFilterComposer
 
   ColumnFilters<String> get customFields => $composableBuilder(
     column: $table.customFields,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptedTotpSecret => $composableBuilder(
+    column: $table.encryptedTotpSecret,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2857,6 +2925,11 @@ class $$PasswordEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get encryptedTotpSecret => $composableBuilder(
+    column: $table.encryptedTotpSecret,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -2939,6 +3012,11 @@ class $$PasswordEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get customFields => $composableBuilder(
     column: $table.customFields,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get encryptedTotpSecret => $composableBuilder(
+    column: $table.encryptedTotpSecret,
     builder: (column) => column,
   );
 
@@ -3044,6 +3122,7 @@ class $$PasswordEntriesTableTableManager
                 Value<bool> isFavorite = const Value.absent(),
                 Value<String?> faviconUrl = const Value.absent(),
                 Value<String?> customFields = const Value.absent(),
+                Value<String?> encryptedTotpSecret = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -3059,6 +3138,7 @@ class $$PasswordEntriesTableTableManager
                 isFavorite: isFavorite,
                 faviconUrl: faviconUrl,
                 customFields: customFields,
+                encryptedTotpSecret: encryptedTotpSecret,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -3076,6 +3156,7 @@ class $$PasswordEntriesTableTableManager
                 Value<bool> isFavorite = const Value.absent(),
                 Value<String?> faviconUrl = const Value.absent(),
                 Value<String?> customFields = const Value.absent(),
+                Value<String?> encryptedTotpSecret = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -3091,6 +3172,7 @@ class $$PasswordEntriesTableTableManager
                 isFavorite: isFavorite,
                 faviconUrl: faviconUrl,
                 customFields: customFields,
+                encryptedTotpSecret: encryptedTotpSecret,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,

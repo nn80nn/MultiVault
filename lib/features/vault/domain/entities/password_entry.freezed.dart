@@ -31,6 +31,7 @@ mixin _$PasswordEntry {
   bool get isFavorite => throw _privateConstructorUsedError;
   String? get faviconUrl => throw _privateConstructorUsedError;
   String? get customFields => throw _privateConstructorUsedError;
+  String? get encryptedTotpSecret => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
   DateTime? get deletedAt => throw _privateConstructorUsedError;
@@ -63,6 +64,7 @@ abstract class $PasswordEntryCopyWith<$Res> {
     bool isFavorite,
     String? faviconUrl,
     String? customFields,
+    String? encryptedTotpSecret,
     DateTime createdAt,
     DateTime updatedAt,
     DateTime? deletedAt,
@@ -94,6 +96,7 @@ class _$PasswordEntryCopyWithImpl<$Res, $Val extends PasswordEntry>
     Object? isFavorite = null,
     Object? faviconUrl = freezed,
     Object? customFields = freezed,
+    Object? encryptedTotpSecret = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
     Object? deletedAt = freezed,
@@ -140,6 +143,10 @@ class _$PasswordEntryCopyWithImpl<$Res, $Val extends PasswordEntry>
                 ? _value.customFields
                 : customFields // ignore: cast_nullable_to_non_nullable
                       as String?,
+            encryptedTotpSecret: freezed == encryptedTotpSecret
+                ? _value.encryptedTotpSecret
+                : encryptedTotpSecret // ignore: cast_nullable_to_non_nullable
+                      as String?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -178,6 +185,7 @@ abstract class _$$PasswordEntryImplCopyWith<$Res>
     bool isFavorite,
     String? faviconUrl,
     String? customFields,
+    String? encryptedTotpSecret,
     DateTime createdAt,
     DateTime updatedAt,
     DateTime? deletedAt,
@@ -208,6 +216,7 @@ class __$$PasswordEntryImplCopyWithImpl<$Res>
     Object? isFavorite = null,
     Object? faviconUrl = freezed,
     Object? customFields = freezed,
+    Object? encryptedTotpSecret = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
     Object? deletedAt = freezed,
@@ -254,6 +263,10 @@ class __$$PasswordEntryImplCopyWithImpl<$Res>
             ? _value.customFields
             : customFields // ignore: cast_nullable_to_non_nullable
                   as String?,
+        encryptedTotpSecret: freezed == encryptedTotpSecret
+            ? _value.encryptedTotpSecret
+            : encryptedTotpSecret // ignore: cast_nullable_to_non_nullable
+                  as String?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -285,6 +298,7 @@ class _$PasswordEntryImpl implements _PasswordEntry {
     this.isFavorite = false,
     this.faviconUrl,
     this.customFields,
+    this.encryptedTotpSecret,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -315,6 +329,8 @@ class _$PasswordEntryImpl implements _PasswordEntry {
   @override
   final String? customFields;
   @override
+  final String? encryptedTotpSecret;
+  @override
   final DateTime createdAt;
   @override
   final DateTime updatedAt;
@@ -323,7 +339,7 @@ class _$PasswordEntryImpl implements _PasswordEntry {
 
   @override
   String toString() {
-    return 'PasswordEntry(id: $id, title: $title, username: $username, encryptedPassword: $encryptedPassword, url: $url, encryptedNotes: $encryptedNotes, categoryId: $categoryId, isFavorite: $isFavorite, faviconUrl: $faviconUrl, customFields: $customFields, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+    return 'PasswordEntry(id: $id, title: $title, username: $username, encryptedPassword: $encryptedPassword, url: $url, encryptedNotes: $encryptedNotes, categoryId: $categoryId, isFavorite: $isFavorite, faviconUrl: $faviconUrl, customFields: $customFields, encryptedTotpSecret: $encryptedTotpSecret, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
   }
 
   @override
@@ -348,6 +364,8 @@ class _$PasswordEntryImpl implements _PasswordEntry {
                 other.faviconUrl == faviconUrl) &&
             (identical(other.customFields, customFields) ||
                 other.customFields == customFields) &&
+            (identical(other.encryptedTotpSecret, encryptedTotpSecret) ||
+                other.encryptedTotpSecret == encryptedTotpSecret) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -370,6 +388,7 @@ class _$PasswordEntryImpl implements _PasswordEntry {
     isFavorite,
     faviconUrl,
     customFields,
+    encryptedTotpSecret,
     createdAt,
     updatedAt,
     deletedAt,
@@ -401,6 +420,7 @@ abstract class _PasswordEntry implements PasswordEntry {
     final bool isFavorite,
     final String? faviconUrl,
     final String? customFields,
+    final String? encryptedTotpSecret,
     required final DateTime createdAt,
     required final DateTime updatedAt,
     final DateTime? deletedAt,
@@ -429,6 +449,8 @@ abstract class _PasswordEntry implements PasswordEntry {
   String? get faviconUrl;
   @override
   String? get customFields;
+  @override
+  String? get encryptedTotpSecret;
   @override
   DateTime get createdAt;
   @override

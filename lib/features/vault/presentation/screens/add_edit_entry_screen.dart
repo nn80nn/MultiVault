@@ -5,6 +5,7 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../password_generator/presentation/screens/generator_screen.dart';
+import '../../../totp/domain/usecases/generate_totp.dart';
 import '../../domain/entities/password_entry.dart';
 import '../../domain/entities/category.dart';
 
@@ -28,6 +29,7 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
   final _passwordController = TextEditingController();
   final _urlController = TextEditingController();
   final _notesController = TextEditingController();
+  final _totpSecretController = TextEditingController();
 
   bool _isPasswordVisible = false;
   bool _isFavorite = false;
@@ -57,6 +59,7 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
 
           String decryptedPassword = '';
           String decryptedNotes = '';
+          String decryptedTotp = '';
 
           if (key != null) {
             try {
@@ -67,6 +70,12 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
               if (entry.encryptedNotes != null) {
                 decryptedNotes = encryptionService.decryptText(
                   entry.encryptedNotes!,
+                  key,
+                );
+              }
+              if (entry.encryptedTotpSecret != null) {
+                decryptedTotp = encryptionService.decryptText(
+                  entry.encryptedTotpSecret!,
                   key,
                 );
               }
@@ -84,6 +93,7 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
             _passwordController.text = decryptedPassword;
             _urlController.text = entry.url ?? '';
             _notesController.text = decryptedNotes;
+            _totpSecretController.text = decryptedTotp;
             _isFavorite = entry.isFavorite;
             _selectedCategoryId = entry.categoryId;
             _isLoading = false;
@@ -114,6 +124,7 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
     _passwordController.dispose();
     _urlController.dispose();
     _notesController.dispose();
+    _totpSecretController.dispose();
     super.dispose();
   }
 
@@ -225,6 +236,19 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // TOTP Secret
+                    TextFormField(
+                      controller: _totpSecretController,
+                      decoration: const InputDecoration(
+                        labelText: 'TOTP Secret (optional)',
+                        hintText: 'Base32 secret or otpauth:// URI',
+                        prefixIcon: Icon(Icons.security),
+                        border: OutlineInputBorder(),
+                      ),
+                      textInputAction: TextInputAction.next,
+                    ),
+                    const SizedBox(height: 16),
+
                     // Notes
                     TextFormField(
                       controller: _notesController,
@@ -333,6 +357,18 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
       final vaultRepository = ref.read(vaultRepositoryProvider);
 
       final now = DateTime.now();
+
+      // Parse TOTP secret - support otpauth:// URIs
+      String? totpSecret;
+      final totpInput = _totpSecretController.text.trim();
+      if (totpInput.isNotEmpty) {
+        if (totpInput.startsWith('otpauth://')) {
+          totpSecret = GenerateTotp.parseOtpauthUri(totpInput);
+        } else {
+          totpSecret = totpInput;
+        }
+      }
+
       final entry = PasswordEntry(
         id: _existingEntry?.id ?? '',
         title: _titleController.text.trim(),
@@ -340,6 +376,7 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
         encryptedPassword: _passwordController.text,
         url: _urlController.text.trim().isEmpty ? null : _urlController.text.trim(),
         encryptedNotes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        encryptedTotpSecret: totpSecret,
         categoryId: _selectedCategoryId ?? 'general',
         isFavorite: _isFavorite,
         createdAt: _existingEntry?.createdAt ?? now,

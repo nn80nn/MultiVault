@@ -13,6 +13,7 @@ class PasswordEntries extends Table {
   BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
   TextColumn get faviconUrl => text().nullable()();
   TextColumn get customFields => text().nullable()();
+  TextColumn get encryptedTotpSecret => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
