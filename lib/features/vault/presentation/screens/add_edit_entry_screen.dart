@@ -1,10 +1,10 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/utils/input_validators.dart';
+import '../../../password_generator/presentation/screens/generator_screen.dart';
 import '../../domain/entities/password_entry.dart';
 import '../../domain/entities/category.dart';
 
@@ -311,11 +311,7 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
   }
 
   Future<void> _showPasswordGenerator() async {
-    final generatedPassword = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => const _PasswordGeneratorBottomSheet(),
-    );
+    final generatedPassword = await GeneratorScreen.showAsBottomSheet(context);
 
     if (generatedPassword != null && generatedPassword.isNotEmpty) {
       setState(() {
@@ -376,186 +372,5 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
         context.showSnackBar('Error saving entry: $e', isError: true);
       }
     }
-  }
-}
-
-class _PasswordGeneratorBottomSheet extends StatefulWidget {
-  const _PasswordGeneratorBottomSheet();
-
-  @override
-  State<_PasswordGeneratorBottomSheet> createState() =>
-      _PasswordGeneratorBottomSheetState();
-}
-
-class _PasswordGeneratorBottomSheetState
-    extends State<_PasswordGeneratorBottomSheet> {
-  int _length = 16;
-  bool _includeUppercase = true;
-  bool _includeLowercase = true;
-  bool _includeNumbers = true;
-  bool _includeSymbols = true;
-  String _generatedPassword = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _generatePassword();
-  }
-
-  void _generatePassword() {
-    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-    const numbers = '0123456789';
-    const symbols = '!@#\$%^&*()_+-=[]{}|;:,.<>?';
-
-    String chars = '';
-    if (_includeUppercase) chars += uppercase;
-    if (_includeLowercase) chars += lowercase;
-    if (_includeNumbers) chars += numbers;
-    if (_includeSymbols) chars += symbols;
-
-    if (chars.isEmpty) {
-      setState(() {
-        _generatedPassword = '';
-      });
-      return;
-    }
-
-    final random = Random.secure();
-    setState(() {
-      _generatedPassword = List.generate(
-        _length,
-        (index) => chars[random.nextInt(chars.length)],
-      ).join();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Generate Password',
-                  style: context.textTheme.titleLarge,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: context.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _generatedPassword,
-                    style: context.textTheme.bodyLarge?.copyWith(
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _generatePassword,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Length: $_length',
-            style: context.textTheme.labelLarge,
-          ),
-          Slider(
-            value: _length.toDouble(),
-            min: 8,
-            max: 32,
-            divisions: 24,
-            label: _length.toString(),
-            onChanged: (value) {
-              setState(() {
-                _length = value.toInt();
-                _generatePassword();
-              });
-            },
-          ),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            title: const Text('Uppercase (A-Z)'),
-            value: _includeUppercase,
-            onChanged: (value) {
-              setState(() {
-                _includeUppercase = value;
-                _generatePassword();
-              });
-            },
-          ),
-          SwitchListTile(
-            title: const Text('Lowercase (a-z)'),
-            value: _includeLowercase,
-            onChanged: (value) {
-              setState(() {
-                _includeLowercase = value;
-                _generatePassword();
-              });
-            },
-          ),
-          SwitchListTile(
-            title: const Text('Numbers (0-9)'),
-            value: _includeNumbers,
-            onChanged: (value) {
-              setState(() {
-                _includeNumbers = value;
-                _generatePassword();
-              });
-            },
-          ),
-          SwitchListTile(
-            title: const Text('Symbols (!@#\$%^&*)'),
-            value: _includeSymbols,
-            onChanged: (value) {
-              setState(() {
-                _includeSymbols = value;
-                _generatePassword();
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: FilledButton.icon(
-              onPressed: _generatedPassword.isEmpty
-                  ? null
-                  : () => Navigator.of(context).pop(_generatedPassword),
-              icon: const Icon(Icons.check),
-              label: const Text('Use This Password'),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
   }
 }
