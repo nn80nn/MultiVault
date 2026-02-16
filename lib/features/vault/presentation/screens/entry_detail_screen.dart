@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/extensions/datetime_extensions.dart';
+import '../../../../services/biometric_service.dart';
 import '../../../totp/presentation/widgets/totp_display.dart';
 
 class EntryDetailScreen extends ConsumerStatefulWidget {
@@ -187,6 +188,8 @@ class _EntryDetailScreenState extends ConsumerState<EntryDetailScreen> {
                         if (decryptedPassword != null)
                           _PasswordRow(
                             password: decryptedPassword,
+                            biometricService: ref.read(biometricServiceProvider),
+                            biometricsEnabled: ref.watch(appSettingsProvider).valueOrNull?.biometricsEnabled ?? false,
                             onCopy: () async {
                               await clipboardService
                                   .copyAndScheduleClear(decryptedPassword!);
@@ -488,10 +491,14 @@ class _DetailRow extends StatelessWidget {
 class _PasswordRow extends StatefulWidget {
   final String password;
   final VoidCallback onCopy;
+  final BiometricService biometricService;
+  final bool biometricsEnabled;
 
   const _PasswordRow({
     required this.password,
     required this.onCopy,
+    required this.biometricService,
+    required this.biometricsEnabled,
   });
 
   @override
@@ -500,6 +507,18 @@ class _PasswordRow extends StatefulWidget {
 
 class _PasswordRowState extends State<_PasswordRow> {
   bool _isObscured = true;
+
+  Future<void> _toggleVisibility() async {
+    if (_isObscured && widget.biometricsEnabled) {
+      final authenticated = await widget.biometricService.authenticate(
+        reason: 'Authenticate to reveal password',
+      );
+      if (!authenticated) return;
+    }
+    setState(() {
+      _isObscured = !_isObscured;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -532,11 +551,7 @@ class _PasswordRowState extends State<_PasswordRow> {
             IconButton(
               icon: Icon(_isObscured ? Icons.visibility : Icons.visibility_off),
               iconSize: 20,
-              onPressed: () {
-                setState(() {
-                  _isObscured = !_isObscured;
-                });
-              },
+              onPressed: _toggleVisibility,
               tooltip: _isObscured ? 'Show' : 'Hide',
             ),
             IconButton(
