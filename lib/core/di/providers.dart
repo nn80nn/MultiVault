@@ -14,6 +14,8 @@ import '../../features/settings/data/repositories/settings_repository_impl.dart'
 import '../../features/settings/domain/entities/app_settings.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/vault/data/database/app_database.dart';
+import '../../features/seed_phrases/data/repositories/seed_phrase_repository_impl.dart';
+import '../../features/seed_phrases/domain/repositories/seed_phrase_repository.dart';
 import '../../features/vault/data/repositories/category_repository_impl.dart';
 import '../../features/vault/data/repositories/vault_repository_impl.dart';
 import '../../features/vault/domain/repositories/category_repository.dart';
@@ -95,6 +97,20 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
   if (db == null) throw StateError('Database not initialized');
   return CategoryRepositoryImpl(categoryDao: db.categoryDao);
+});
+
+final seedPhraseRepositoryProvider = Provider<SeedPhraseRepository>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  if (db == null) throw StateError('Database not initialized');
+  return SeedPhraseRepositoryImpl(
+    dao: db.seedPhraseDao,
+    encryptionService: ref.watch(encryptionServiceProvider),
+    getEncryptionKey: () {
+      final key = ref.read(encryptionKeyProvider);
+      if (key == null) throw StateError('App is locked');
+      return key;
+    },
+  );
 });
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {

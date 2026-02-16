@@ -1627,6 +1627,593 @@ class PasswordHistoryEntriesCompanion
   }
 }
 
+class $SeedPhrasesTable extends SeedPhrases
+    with TableInfo<$SeedPhrasesTable, SeedPhrase> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SeedPhrasesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 255,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _encryptedPhraseMeta = const VerificationMeta(
+    'encryptedPhrase',
+  );
+  @override
+  late final GeneratedColumn<String> encryptedPhrase = GeneratedColumn<String>(
+    'encrypted_phrase',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _blockchainMeta = const VerificationMeta(
+    'blockchain',
+  );
+  @override
+  late final GeneratedColumn<String> blockchain = GeneratedColumn<String>(
+    'blockchain',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _walletAddressMeta = const VerificationMeta(
+    'walletAddress',
+  );
+  @override
+  late final GeneratedColumn<String> walletAddress = GeneratedColumn<String>(
+    'wallet_address',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _encryptedNotesMeta = const VerificationMeta(
+    'encryptedNotes',
+  );
+  @override
+  late final GeneratedColumn<String> encryptedNotes = GeneratedColumn<String>(
+    'encrypted_notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    encryptedPhrase,
+    blockchain,
+    walletAddress,
+    encryptedNotes,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'seed_phrases';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SeedPhrase> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('encrypted_phrase')) {
+      context.handle(
+        _encryptedPhraseMeta,
+        encryptedPhrase.isAcceptableOrUnknown(
+          data['encrypted_phrase']!,
+          _encryptedPhraseMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_encryptedPhraseMeta);
+    }
+    if (data.containsKey('blockchain')) {
+      context.handle(
+        _blockchainMeta,
+        blockchain.isAcceptableOrUnknown(data['blockchain']!, _blockchainMeta),
+      );
+    }
+    if (data.containsKey('wallet_address')) {
+      context.handle(
+        _walletAddressMeta,
+        walletAddress.isAcceptableOrUnknown(
+          data['wallet_address']!,
+          _walletAddressMeta,
+        ),
+      );
+    }
+    if (data.containsKey('encrypted_notes')) {
+      context.handle(
+        _encryptedNotesMeta,
+        encryptedNotes.isAcceptableOrUnknown(
+          data['encrypted_notes']!,
+          _encryptedNotesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SeedPhrase map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SeedPhrase(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      encryptedPhrase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encrypted_phrase'],
+      )!,
+      blockchain: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}blockchain'],
+      ),
+      walletAddress: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}wallet_address'],
+      ),
+      encryptedNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encrypted_notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $SeedPhrasesTable createAlias(String alias) {
+    return $SeedPhrasesTable(attachedDatabase, alias);
+  }
+}
+
+class SeedPhrase extends DataClass implements Insertable<SeedPhrase> {
+  final String id;
+  final String name;
+  final String encryptedPhrase;
+  final String? blockchain;
+  final String? walletAddress;
+  final String? encryptedNotes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const SeedPhrase({
+    required this.id,
+    required this.name,
+    required this.encryptedPhrase,
+    this.blockchain,
+    this.walletAddress,
+    this.encryptedNotes,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['encrypted_phrase'] = Variable<String>(encryptedPhrase);
+    if (!nullToAbsent || blockchain != null) {
+      map['blockchain'] = Variable<String>(blockchain);
+    }
+    if (!nullToAbsent || walletAddress != null) {
+      map['wallet_address'] = Variable<String>(walletAddress);
+    }
+    if (!nullToAbsent || encryptedNotes != null) {
+      map['encrypted_notes'] = Variable<String>(encryptedNotes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  SeedPhrasesCompanion toCompanion(bool nullToAbsent) {
+    return SeedPhrasesCompanion(
+      id: Value(id),
+      name: Value(name),
+      encryptedPhrase: Value(encryptedPhrase),
+      blockchain: blockchain == null && nullToAbsent
+          ? const Value.absent()
+          : Value(blockchain),
+      walletAddress: walletAddress == null && nullToAbsent
+          ? const Value.absent()
+          : Value(walletAddress),
+      encryptedNotes: encryptedNotes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(encryptedNotes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory SeedPhrase.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SeedPhrase(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      encryptedPhrase: serializer.fromJson<String>(json['encryptedPhrase']),
+      blockchain: serializer.fromJson<String?>(json['blockchain']),
+      walletAddress: serializer.fromJson<String?>(json['walletAddress']),
+      encryptedNotes: serializer.fromJson<String?>(json['encryptedNotes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'encryptedPhrase': serializer.toJson<String>(encryptedPhrase),
+      'blockchain': serializer.toJson<String?>(blockchain),
+      'walletAddress': serializer.toJson<String?>(walletAddress),
+      'encryptedNotes': serializer.toJson<String?>(encryptedNotes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  SeedPhrase copyWith({
+    String? id,
+    String? name,
+    String? encryptedPhrase,
+    Value<String?> blockchain = const Value.absent(),
+    Value<String?> walletAddress = const Value.absent(),
+    Value<String?> encryptedNotes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => SeedPhrase(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    encryptedPhrase: encryptedPhrase ?? this.encryptedPhrase,
+    blockchain: blockchain.present ? blockchain.value : this.blockchain,
+    walletAddress: walletAddress.present
+        ? walletAddress.value
+        : this.walletAddress,
+    encryptedNotes: encryptedNotes.present
+        ? encryptedNotes.value
+        : this.encryptedNotes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  SeedPhrase copyWithCompanion(SeedPhrasesCompanion data) {
+    return SeedPhrase(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      encryptedPhrase: data.encryptedPhrase.present
+          ? data.encryptedPhrase.value
+          : this.encryptedPhrase,
+      blockchain: data.blockchain.present
+          ? data.blockchain.value
+          : this.blockchain,
+      walletAddress: data.walletAddress.present
+          ? data.walletAddress.value
+          : this.walletAddress,
+      encryptedNotes: data.encryptedNotes.present
+          ? data.encryptedNotes.value
+          : this.encryptedNotes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeedPhrase(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('encryptedPhrase: $encryptedPhrase, ')
+          ..write('blockchain: $blockchain, ')
+          ..write('walletAddress: $walletAddress, ')
+          ..write('encryptedNotes: $encryptedNotes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    encryptedPhrase,
+    blockchain,
+    walletAddress,
+    encryptedNotes,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SeedPhrase &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.encryptedPhrase == this.encryptedPhrase &&
+          other.blockchain == this.blockchain &&
+          other.walletAddress == this.walletAddress &&
+          other.encryptedNotes == this.encryptedNotes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class SeedPhrasesCompanion extends UpdateCompanion<SeedPhrase> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> encryptedPhrase;
+  final Value<String?> blockchain;
+  final Value<String?> walletAddress;
+  final Value<String?> encryptedNotes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const SeedPhrasesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.encryptedPhrase = const Value.absent(),
+    this.blockchain = const Value.absent(),
+    this.walletAddress = const Value.absent(),
+    this.encryptedNotes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SeedPhrasesCompanion.insert({
+    required String id,
+    required String name,
+    required String encryptedPhrase,
+    this.blockchain = const Value.absent(),
+    this.walletAddress = const Value.absent(),
+    this.encryptedNotes = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       encryptedPhrase = Value(encryptedPhrase),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<SeedPhrase> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? encryptedPhrase,
+    Expression<String>? blockchain,
+    Expression<String>? walletAddress,
+    Expression<String>? encryptedNotes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (encryptedPhrase != null) 'encrypted_phrase': encryptedPhrase,
+      if (blockchain != null) 'blockchain': blockchain,
+      if (walletAddress != null) 'wallet_address': walletAddress,
+      if (encryptedNotes != null) 'encrypted_notes': encryptedNotes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SeedPhrasesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? encryptedPhrase,
+    Value<String?>? blockchain,
+    Value<String?>? walletAddress,
+    Value<String?>? encryptedNotes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return SeedPhrasesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      encryptedPhrase: encryptedPhrase ?? this.encryptedPhrase,
+      blockchain: blockchain ?? this.blockchain,
+      walletAddress: walletAddress ?? this.walletAddress,
+      encryptedNotes: encryptedNotes ?? this.encryptedNotes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (encryptedPhrase.present) {
+      map['encrypted_phrase'] = Variable<String>(encryptedPhrase.value);
+    }
+    if (blockchain.present) {
+      map['blockchain'] = Variable<String>(blockchain.value);
+    }
+    if (walletAddress.present) {
+      map['wallet_address'] = Variable<String>(walletAddress.value);
+    }
+    if (encryptedNotes.present) {
+      map['encrypted_notes'] = Variable<String>(encryptedNotes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeedPhrasesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('encryptedPhrase: $encryptedPhrase, ')
+          ..write('blockchain: $blockchain, ')
+          ..write('walletAddress: $walletAddress, ')
+          ..write('encryptedNotes: $encryptedNotes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1636,6 +2223,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $PasswordHistoryEntriesTable passwordHistoryEntries =
       $PasswordHistoryEntriesTable(this);
+  late final $SeedPhrasesTable seedPhrases = $SeedPhrasesTable(this);
   late final PasswordEntryDao passwordEntryDao = PasswordEntryDao(
     this as AppDatabase,
   );
@@ -1643,6 +2231,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final PasswordHistoryDao passwordHistoryDao = PasswordHistoryDao(
     this as AppDatabase,
   );
+  late final SeedPhraseDao seedPhraseDao = SeedPhraseDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1651,6 +2240,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categories,
     passwordEntries,
     passwordHistoryEntries,
+    seedPhrases,
   ];
 }
 
@@ -2946,6 +3536,290 @@ typedef $$PasswordHistoryEntriesTableProcessedTableManager =
       PasswordHistoryEntry,
       PrefetchHooks Function({bool entryId})
     >;
+typedef $$SeedPhrasesTableCreateCompanionBuilder =
+    SeedPhrasesCompanion Function({
+      required String id,
+      required String name,
+      required String encryptedPhrase,
+      Value<String?> blockchain,
+      Value<String?> walletAddress,
+      Value<String?> encryptedNotes,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$SeedPhrasesTableUpdateCompanionBuilder =
+    SeedPhrasesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> encryptedPhrase,
+      Value<String?> blockchain,
+      Value<String?> walletAddress,
+      Value<String?> encryptedNotes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$SeedPhrasesTableFilterComposer
+    extends Composer<_$AppDatabase, $SeedPhrasesTable> {
+  $$SeedPhrasesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptedPhrase => $composableBuilder(
+    column: $table.encryptedPhrase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get blockchain => $composableBuilder(
+    column: $table.blockchain,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get walletAddress => $composableBuilder(
+    column: $table.walletAddress,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptedNotes => $composableBuilder(
+    column: $table.encryptedNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SeedPhrasesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SeedPhrasesTable> {
+  $$SeedPhrasesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encryptedPhrase => $composableBuilder(
+    column: $table.encryptedPhrase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get blockchain => $composableBuilder(
+    column: $table.blockchain,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get walletAddress => $composableBuilder(
+    column: $table.walletAddress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encryptedNotes => $composableBuilder(
+    column: $table.encryptedNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SeedPhrasesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SeedPhrasesTable> {
+  $$SeedPhrasesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get encryptedPhrase => $composableBuilder(
+    column: $table.encryptedPhrase,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get blockchain => $composableBuilder(
+    column: $table.blockchain,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get walletAddress => $composableBuilder(
+    column: $table.walletAddress,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get encryptedNotes => $composableBuilder(
+    column: $table.encryptedNotes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$SeedPhrasesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SeedPhrasesTable,
+          SeedPhrase,
+          $$SeedPhrasesTableFilterComposer,
+          $$SeedPhrasesTableOrderingComposer,
+          $$SeedPhrasesTableAnnotationComposer,
+          $$SeedPhrasesTableCreateCompanionBuilder,
+          $$SeedPhrasesTableUpdateCompanionBuilder,
+          (
+            SeedPhrase,
+            BaseReferences<_$AppDatabase, $SeedPhrasesTable, SeedPhrase>,
+          ),
+          SeedPhrase,
+          PrefetchHooks Function()
+        > {
+  $$SeedPhrasesTableTableManager(_$AppDatabase db, $SeedPhrasesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SeedPhrasesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SeedPhrasesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SeedPhrasesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> encryptedPhrase = const Value.absent(),
+                Value<String?> blockchain = const Value.absent(),
+                Value<String?> walletAddress = const Value.absent(),
+                Value<String?> encryptedNotes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SeedPhrasesCompanion(
+                id: id,
+                name: name,
+                encryptedPhrase: encryptedPhrase,
+                blockchain: blockchain,
+                walletAddress: walletAddress,
+                encryptedNotes: encryptedNotes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String encryptedPhrase,
+                Value<String?> blockchain = const Value.absent(),
+                Value<String?> walletAddress = const Value.absent(),
+                Value<String?> encryptedNotes = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SeedPhrasesCompanion.insert(
+                id: id,
+                name: name,
+                encryptedPhrase: encryptedPhrase,
+                blockchain: blockchain,
+                walletAddress: walletAddress,
+                encryptedNotes: encryptedNotes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SeedPhrasesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SeedPhrasesTable,
+      SeedPhrase,
+      $$SeedPhrasesTableFilterComposer,
+      $$SeedPhrasesTableOrderingComposer,
+      $$SeedPhrasesTableAnnotationComposer,
+      $$SeedPhrasesTableCreateCompanionBuilder,
+      $$SeedPhrasesTableUpdateCompanionBuilder,
+      (
+        SeedPhrase,
+        BaseReferences<_$AppDatabase, $SeedPhrasesTable, SeedPhrase>,
+      ),
+      SeedPhrase,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2959,4 +3833,6 @@ class $AppDatabaseManager {
         _db,
         _db.passwordHistoryEntries,
       );
+  $$SeedPhrasesTableTableManager get seedPhrases =>
+      $$SeedPhrasesTableTableManager(_db, _db.seedPhrases);
 }

@@ -8,6 +8,10 @@ class RouteConstants {
   static const String vaultEdit = '/vault/:id/edit';
   static const String generator = '/generator';
   static const String health = '/health';
+  static const String seeds = '/seeds';
+  static const String seedsNew = '/seeds/new';
+  static const String seedsDetail = '/seeds/:id';
+  static const String seedsEdit = '/seeds/:id/edit';
   static const String settings = '/settings';
   static const String settingsImport = '/settings/import';
   static const String settingsExport = '/settings/export';

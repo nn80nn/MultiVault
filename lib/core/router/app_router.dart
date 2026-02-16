@@ -10,6 +10,9 @@ import '../../features/import_export/presentation/screens/export_screen.dart';
 import '../../features/import_export/presentation/screens/import_screen.dart';
 import '../../features/password_generator/presentation/screens/generator_screen.dart';
 import '../../features/password_health/presentation/screens/password_health_screen.dart';
+import '../../features/seed_phrases/presentation/screens/add_edit_seed_phrase_screen.dart';
+import '../../features/seed_phrases/presentation/screens/seed_phrase_detail_screen.dart';
+import '../../features/seed_phrases/presentation/screens/seed_phrase_list_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/vault/presentation/screens/add_edit_entry_screen.dart';
 import '../../features/vault/presentation/screens/entry_detail_screen.dart';
@@ -75,6 +78,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteConstants.health,
         builder: (context, state) => const PasswordHealthScreen(),
+      ),
+      GoRoute(
+        path: RouteConstants.seeds,
+        builder: (context, state) => const SeedPhraseListScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const AddEditSeedPhraseScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => SeedPhraseDetailScreen(
+              entryId: state.pathParameters['id']!,
+            ),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                builder: (context, state) => AddEditSeedPhraseScreen(
+                  entryId: state.pathParameters['id'],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: RouteConstants.settings,

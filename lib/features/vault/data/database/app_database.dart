@@ -12,21 +12,23 @@ import '../../../../core/constants/db_constants.dart';
 import 'daos/category_dao.dart';
 import 'daos/password_entry_dao.dart';
 import 'daos/password_history_dao.dart';
+import 'daos/seed_phrase_dao.dart';
 import 'tables/categories_table.dart';
 import 'tables/password_entries_table.dart';
 import 'tables/password_history_table.dart';
+import 'tables/seed_phrases_table.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [PasswordEntries, Categories, PasswordHistoryEntries],
-  daos: [PasswordEntryDao, CategoryDao, PasswordHistoryDao],
+  tables: [PasswordEntries, Categories, PasswordHistoryEntries, SeedPhrases],
+  daos: [PasswordEntryDao, CategoryDao, PasswordHistoryDao, SeedPhraseDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -35,7 +37,9 @@ class AppDatabase extends _$AppDatabase {
           await _seedDefaultCategories();
         },
         onUpgrade: (Migrator m, int from, int to) async {
-          // Future migrations
+          if (from < 2) {
+            await m.createTable(seedPhrases);
+          }
         },
       );
 

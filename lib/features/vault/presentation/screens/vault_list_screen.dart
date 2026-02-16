@@ -83,6 +83,13 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen> {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.key_outlined),
+            tooltip: 'Seed Phrases',
+            onPressed: () {
+              context.push('/seeds');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.health_and_safety_outlined),
             tooltip: 'Password Health',
             onPressed: () {
