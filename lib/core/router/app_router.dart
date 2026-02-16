@@ -9,6 +9,7 @@ import '../../features/categories/presentation/screens/categories_management_scr
 import '../../features/import_export/presentation/screens/export_screen.dart';
 import '../../features/import_export/presentation/screens/import_screen.dart';
 import '../../features/password_generator/presentation/screens/generator_screen.dart';
+import '../../features/password_health/presentation/screens/password_health_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/vault/presentation/screens/add_edit_entry_screen.dart';
 import '../../features/vault/presentation/screens/entry_detail_screen.dart';
@@ -70,6 +71,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteConstants.generator,
         builder: (context, state) => const GeneratorScreen(),
+      ),
+      GoRoute(
+        path: RouteConstants.health,
+        builder: (context, state) => const PasswordHealthScreen(),
       ),
       GoRoute(
         path: RouteConstants.settings,

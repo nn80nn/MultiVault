@@ -7,6 +7,7 @@ class RouteConstants {
   static const String vaultDetail = '/vault/:id';
   static const String vaultEdit = '/vault/:id/edit';
   static const String generator = '/generator';
+  static const String health = '/health';
   static const String settings = '/settings';
   static const String settingsImport = '/settings/import';
   static const String settingsExport = '/settings/export';
