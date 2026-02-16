@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:typed_data';
 import '../../../../core/di/providers.dart';
 import '../../../../core/extensions/context_extensions.dart';
+import '../../../../services/favicon_service.dart';
 import '../../domain/entities/password_entry.dart';
 import '../../domain/entities/category.dart';
 
@@ -316,11 +317,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen> {
         ],
       ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: context.colorScheme.primaryContainer,
-          foregroundColor: context.colorScheme.onPrimaryContainer,
-          child: Icon(_getIconForEntry(entry)),
-        ),
+        leading: _buildLeadingAvatar(context, entry),
         title: Row(
           children: [
             Expanded(
@@ -378,6 +375,33 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen> {
           context.push('/vault/${entry.id}');
         },
       ),
+    );
+  }
+
+  static final _faviconService = FaviconService();
+
+  Widget _buildLeadingAvatar(BuildContext context, PasswordEntry entry) {
+    final faviconUrl = _faviconService.getFaviconUrl(entry.url);
+    if (faviconUrl != null) {
+      return CircleAvatar(
+        backgroundColor: context.colorScheme.primaryContainer,
+        child: ClipOval(
+          child: Image.network(
+            faviconUrl,
+            width: 24,
+            height: 24,
+            errorBuilder: (_, __, ___) => Icon(
+              _getIconForEntry(entry),
+              color: context.colorScheme.onPrimaryContainer,
+            ),
+          ),
+        ),
+      );
+    }
+    return CircleAvatar(
+      backgroundColor: context.colorScheme.primaryContainer,
+      foregroundColor: context.colorScheme.onPrimaryContainer,
+      child: Icon(_getIconForEntry(entry)),
     );
   }
 
